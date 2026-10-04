@@ -1,0 +1,45 @@
+# Production overlay. Sources are baked into the images, nothing is bind-mounted.
+# The images are tagged `:prod` so they never overwrite the development ones.
+#
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+
+services:
+  db:
+    ports: !reset []
+
+  api:
+    image: mairie-valentine/api:prod
+    build:
+      target: prod
+    environment:
+      APP_ENV: prod
+      APP_DEBUG: 0
+      XDEBUG_MODE: "off"
+    # The warmed cache ships with the image, only the JWT keypair has to survive
+    # a restart — regenerating it would invalidate every issued token.
+    volumes: !override
+      - api_jwt:/var/www/html/config/jwt
+
+  nginx:
+    image: mairie-valentine/nginx:prod
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+      additional_contexts:
+        # Serve the public/ directory built into the API image, so the bundle
+        # assets are present even on a fresh clone.
+        api: service:api
+    volumes: !reset []
+
+  web:
+    image: mairie-valentine/web:prod
+    build:
+      target: prod
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:?set API_URL to the public API origin}
+    environment:
+      NODE_ENV: production
+    volumes: !reset []
+
+volumes:
+  api_jwt:

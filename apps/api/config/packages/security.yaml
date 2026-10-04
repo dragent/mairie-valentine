@@ -1,0 +1,36 @@
+security:
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: discordId
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        # The OAuth2 handshake needs a session to carry the `state` parameter.
+        oauth:
+            pattern: ^/auth/discord
+            stateless: false
+            provider: app_user_provider
+
+        api:
+            pattern: ^/
+            stateless: true
+            provider: app_user_provider
+            jwt: ~
+            entry_point: jwt
+
+    access_control:
+        - { path: ^/auth/discord, roles: PUBLIC_ACCESS }
+        - { path: ^/api/(docs|contexts|\.well-known), roles: PUBLIC_ACCESS }
+        - { path: ^/api$, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: ROLE_USER }
+
+    role_hierarchy:
+        ROLE_AGENT: [ROLE_USER]
+        ROLE_ADJOINT: [ROLE_AGENT]
+        ROLE_MAIRE: [ROLE_ADJOINT]
+        ROLE_ADMIN: [ROLE_MAIRE, ROLE_ALLOWED_TO_SWITCH]

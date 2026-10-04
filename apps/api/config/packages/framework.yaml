@@ -1,0 +1,21 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # nginx sits in front of PHP-FPM, so the real client IP and scheme come from
+    # the forwarded headers.
+    trusted_proxies: '%env(TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+
+    # A session is only started for the Discord OAuth2 handshake, which needs to
+    # keep the `state` parameter between the two requests. The API itself is
+    # stateless and authenticated with a JWT.
+    session:
+        cookie_secure: auto
+        cookie_samesite: lax
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

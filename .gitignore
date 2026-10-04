@@ -1,0 +1,15 @@
+###> Environment ###
+# Anchored to the repository root: apps/api/.env is a committed template, as
+# per the Symfony convention.
+/.env
+/.env.local
+/.env.*.local
+###< Environment ###
+
+###> Editors / OS ###
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+###< Editors / OS ###

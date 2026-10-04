@@ -1,0 +1,14 @@
+# Normalise line endings. The Docker images are Linux-only, so a CRLF checkout
+# of the entrypoint would break the api container on Windows machines.
+* text=auto eol=lf
+
+*.sh text eol=lf
+Makefile text eol=lf
+*.conf text eol=lf
+Dockerfile text eol=lf
+
+*.ico binary
+*.png binary
+*.jpg binary
+*.svg text eol=lf
+*.pem binary
