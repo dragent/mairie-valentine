@@ -1,0 +1,35 @@
+---
+description: Checklist pour ajouter une nouvelle feature métier bout-en-bout
+alwaysApply: true
+---
+
+# Nouvelles features
+
+Une feature métier traverse en général **API → migration → client → page → rôles**.
+
+## Checklist
+
+1. **Intention** — ressource, qui y accède (`ROLE_*`), champs client vs serveur.
+2. **Tests (TDD)** — cas nominal, validation FR, refus 403, effets de bord (Discord, référence).
+3. **API** — `Entity` + `Enum` si besoin, `ApiResource`/`security`, groups serialize, processor si auteur ou effet métier.
+4. **Migration** — `make:migration` + migrate + `schema:validate`.
+5. **Front** — types + helpers dans `api.ts`, page sous `app/mairie/…`, `RequireRole`, `useResource` / `resource-table`.
+6. **Nav** — lien dans le header / navigation mairie si la page est un nouvel espace.
+7. **Docs** — mettre à jour le README **seulement** si l'utilisateur le demande ou si le contrat d'exploitation change (env, rôles).
+
+## Alignement sur l'existant
+
+| Exemple | Modèle à cloner |
+| --- | --- |
+| Mémo CRUD staff | `Note` + page `notes` |
+| Ressource élue | `Decree` + `ROLE_ELU` |
+| Action Discord | `JobAssignment` + `AssignJobProcessor` |
+
+## Définition de « terminé »
+
+- Tests du périmètre verts dans Docker.
+- Lint front si fichiers TS/TSX touchés.
+- Pas de secrets, pas de champs serveur écrits par le client.
+- Comportement utilisable par le rôle prévu sous `/mairie`.
+
+Hors scope par défaut : redesign global, admin générique, nouvelles dépendances UI/HTTP.

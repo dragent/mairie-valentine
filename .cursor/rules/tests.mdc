@@ -1,0 +1,39 @@
+---
+description: Où et comment écrire les tests API et front
+globs: apps/api/tests/**/*
+alwaysApply: false
+---
+
+# Tests
+
+Il n'y a pas encore de suite mature : en introduire une **au moment du besoin**, sans framework fantaisiste.
+
+## API (`apps/api`)
+
+- PHPUnit (Symfony) sous `apps/api/tests/`.
+- Nommage : `tests/Service/JobAssignerTest.php`, `tests/State/...Test.php`.
+- Couvrir en priorité : security des opérations, processors, sync Discord mockée, validation des messages FR.
+- HTTP : `WebTestCase` / client API Platform avec JWT de test ; mocker `DiscordApi`, jamais le réseau réel.
+
+```bash
+docker compose exec api php bin/phpunit
+# ou, si non installé : composer require --dev phpunit/phpunit symfony/phpunit-bridge
+```
+
+## Front (`apps/web`)
+
+- Tests unitaires des helpers/hooks (`dates`, mapping rôles, parse hash token) plutôt que des pages entières.
+- Si un runner est ajouté : Vitest ou le runner officiel Next — un seul, aligné sur le `package.json`.
+- Pas de snapshots volumineux ; assert sur le comportement observable.
+
+## Contenu d'un bon test
+
+- Un comportement, un assert principal.
+- Données de fixture locales, pas de dépendance à la DB de dev partagée.
+- Cas : happy path, validation, `403` selon le rôle, erreur Discord remontée en `detail`.
+
+## Interdit
+
+- Tests qui flakent (sleep, horloge non injectée, ordre non déterministe).
+- Appels Discord / réseau externe dans la CI locale.
+- Tester l'implémentation privée plutôt que le contrat public.

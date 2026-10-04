@@ -1,0 +1,38 @@
+---
+description: Standards professionnels du portail Mairie de Valentine
+alwaysApply: true
+---
+
+# Projet — Mairie de Valentine
+
+Portail administratif RedM : monorepo `apps/web` (Next.js) + `apps/api` (Symfony / API Platform).
+
+## Principes
+
+- Toucher uniquement ce qui est demandé ; pas de refactors opportunistes ni de docs non sollicitées.
+- Préférer Docker (`docker compose`, `make`) plutôt que d'installer des runtimes locaux.
+- UI et messages utilisateur en **français** ; code, commentaires et commits en **anglais**.
+- Respecter l'architecture existante avant d'en inventer une nouvelle.
+
+## Organisation
+
+| Zone | Rôle |
+| --- | --- |
+| `apps/api/src/Entity` | Ressources API Platform + contrôle d'accès |
+| `apps/api/src/State` | Processors (auteur, promotion) |
+| `apps/api/src/Security` | Discord OAuth, provisioning, rôles |
+| `apps/web/src/app/mairie` | Espace de travail métier |
+| `apps/web/src/lib/api.ts` | Client HTTP typé + constantes de rôles |
+
+## Sécurité (non négociable)
+
+- Ne jamais committer `.env`, secrets Discord, JWT, passphrases.
+- Le client ne pose jamais l'auteur, les dates serveur, ni la référence de décret.
+- Les mots de passe ne sont pas stockés : auth Discord → JWT RSA uniquement.
+- Hiérarchie : `ROLE_USER` → `ROLE_SECRETAIRE` → `ROLE_ELU` → `ROLE_MAIRE` → `ROLE_ADMIN`.
+
+## Qualité
+
+- Diff minimal, lisible, cohérent avec le style du fichier modifié.
+- Pas de dépendances inutiles ; réutiliser `apiFetch`, hooks et processors existants.
+- Après un changement API, aligner le front (`api.ts`, pages `/mairie`) si le contrat change.

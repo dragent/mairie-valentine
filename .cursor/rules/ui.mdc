@@ -1,0 +1,41 @@
+---
+description: Design system et patterns UI de l'espace mairie
+globs: apps/web/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# UI — portail mairie
+
+Préserver le look western / administratif déjà en place (`globals.css`) ; ne pas importer une autre esthétique.
+
+## Tokens
+
+Utiliser les couleurs sémantiques Tailwind du thème : `background`, `foreground`, `surface`, `line`, `primary`, `accent`, `muted`.
+Titres d'espace de travail : `font-display text-primary`.
+
+```tsx
+// ❌ BAD — couleurs arbitraires / nouvelle lib UI
+<div className="bg-[#f4f1ea] text-purple-700">...
+
+// ✅ GOOD
+<h1 className="font-display text-2xl text-primary">Notes</h1>
+<p className="text-sm text-muted">…</p>
+```
+
+## Espace `/mairie`
+
+Réutiliser `resource-table.tsx` : `WorkspaceHeading`, `ErrorBanner`, `ResourceTable`, `ResourceForm`, `Field`, `TextInput`, `TextArea`, `RowAction`.
+Données via `useResource` + modules de `api.ts` ; garde avec `RequireRole`.
+
+Structure typique d'une page : heading → erreur → tableau → formulaire de création.
+
+## Contenu
+
+- Libellés, empty states, erreurs : **français**, ton administratif clair.
+- Dates via `formatDateTime` / helpers de `dates.ts`.
+- Pas de cartes décoratives, stats strips, ni overlays sur le hero public.
+- Accessibilité minimale : `role="alert"` pour les erreurs, labels via `Field`, boutons avec libellé explicite.
+
+## Périmètre
+
+Ne pas redesign global « en passant ». Si un composant partagé manque, l'étendre dans `resource-table` ou `components/` plutôt que de dupliquer des classes.

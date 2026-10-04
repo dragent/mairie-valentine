@@ -1,0 +1,28 @@
+---
+description: Livraison Docker, checks et production
+alwaysApply: true
+---
+
+# Livraison
+
+Les règles de commit sont dans `commits.mdc`. Ici : faire tourner et déployer sans casser l'environnement.
+
+## Fichiers exclus des livraisons
+
+- `.env`, clés JWT, tokens Discord, passphrases.
+- Artefacts générés (`node_modules`, cache Symfony) sauf s'ils sont volontairement versionnés.
+
+## Checks utiles avant merge / livraison
+
+```bash
+docker compose exec web npm run lint
+docker compose exec api php bin/console doctrine:migrations:status
+docker compose exec api php bin/console lint:container
+docker compose exec api php bin/phpunit   # si la suite existe
+```
+
+## Production
+
+- `compose.prod.yaml` : `APP_ENV=prod`, `APP_DEBUG=0`, `AUTO_MIGRATE=0`, CORS restreint, vraies URLs.
+- Rebuild l'image front si `NEXT_PUBLIC_API_URL` change (valeur inlinée au build).
+- JWT passphrase stable une fois les clés générées dans le volume.

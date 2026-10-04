@@ -1,0 +1,37 @@
+---
+description: Conventions Next.js / React / TypeScript du front
+globs: apps/web/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Front — Next.js 16 (App Router)
+
+Lire `apps/web/AGENTS.md` et la doc locale Next dans `node_modules/next/dist/docs/` avant d'introduire une API incertaine.
+
+## Patterns
+
+- Composants fonctionnels ; logique réutilisable dans `src/lib/` ou hooks dédiés.
+- Appels API via `apiFetch` / types de `src/lib/api.ts` — pas de `fetch` ad hoc vers l'API.
+- Gardes de rôle avec `RequireRole` et les constantes `ROLE_*` exportées par `api.ts`.
+- JWT uniquement via le contexte auth / `localStorage` ; jamais dans l'URL query (fragment `#token=` seulement au callback).
+
+```tsx
+// ❌ BAD — fetch brut + rôle en dur
+await fetch("http://localhost:8080/api/notes");
+if (user.roles.includes("ROLE_SECRETAIRE")) { ... }
+
+// ✅ GOOD
+await apiFetch<Note[]>("/api/notes", { token });
+<RequireRole role={ROLE_SECRETAIRE}>...</RequireRole>
+```
+
+## UI
+
+- Tailwind 4 déjà en place : suivre les classes et la structure des pages `/mairie` existantes.
+- Textes visibles en français ; noms de variables/composants en anglais.
+- Préférer les tableaux/formulaires du design actuel (`resource-table`, etc.) plutôt que de nouvelles libs UI.
+
+## Docker / env
+
+- Navigateur → `NEXT_PUBLIC_API_URL` ; Server Components Docker → `INTERNAL_API_URL` via `apiBaseUrl()`.
+- Ne pas hardcoder `localhost:8080` hors des fallbacks déjà présents dans `api.ts`.

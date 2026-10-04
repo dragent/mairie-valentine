@@ -1,0 +1,38 @@
+---
+description: Cycle TDD red-green-refactor avant d'implémenter
+alwaysApply: true
+---
+
+# TDD
+
+Pour toute logique métier, règle de sécurité, transformation de données ou bugfix : écrire le test **avant** le code de production.
+
+## Cycle
+
+1. **Red** — un test minimal qui échoue pour la bonne raison.
+2. **Green** — le plus petit changement qui fait passer le test.
+3. **Refactor** — nettoyer sans casser les tests ; pas de nouvelle feature ici.
+
+## Quand TDD est obligatoire
+
+- Processors API Platform, services (`JobAssigner`, Discord), validators, enums de statut.
+- Calculs / règles (référence décret, hiérarchie de rôles, assignation de job).
+- Régression : reproduire le bug en test, puis corriger.
+
+## Quand TDD est assoupli
+
+- Markup purement présentationnel déjà couvert par les patterns UI existants.
+- Collage de wiring trivial (route → page → `useResource`) **après** que le contrat API est testé côté backend.
+
+## Ordre de travail recommandé
+
+```
+test API (cas nominal + 403/validation)
+  → implémentation Entity/State/Service
+  → migration si schéma
+  → types + client dans api.ts
+  → page /mairie
+  → test front du hook/helper si logique non triviale
+```
+
+Ne pas marquer une feature « terminée » tant que les tests Red→Green du périmètre demandé ne passent pas dans Docker.

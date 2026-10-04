@@ -1,0 +1,42 @@
+---
+description: Conventions Symfony 7 / API Platform / Doctrine
+globs: apps/api/**/*.{php,yaml,yml}
+alwaysApply: false
+---
+
+# API — Symfony 7.4 + API Platform 4
+
+## Entités & sécurité
+
+- Déclarer les opérations et le `security` sur l'entité (`ApiResource`), pas dans des contrôleurs CRUD génériques.
+- Contrôleurs réservés aux cas hors ressource : `/auth/discord`, `/api/me`, `/health`.
+- Métadonnées serveur (auteur, timestamps, référence décret) via listeners / processors — jamais trustées depuis le client.
+
+```php
+// ❌ BAD — laisser le client écrire l'auteur
+new Post();
+
+// ✅ GOOD — processor dédié
+new Post(processor: AuthoredPersistProcessor::class);
+```
+
+## Couches
+
+| Besoin | Emplacement |
+| --- | --- |
+| Ressource persistée | `src/Entity` + enum dans `src/Enum` |
+| Payload non-entité | `src/Dto` |
+| Effet métier à l'écriture | `src/State/*Processor` |
+| Sync Discord / jobs | `src/Service`, `src/Security/Discord` |
+
+## Doctrine
+
+- Migrations via `bin/console make:migration` dans le conteneur `api` ; ne pas éditer l'historique appliqué à la légère.
+- `declare(strict_types=1);`, typage PHP 8.3+, attributs PHP plutôt qu'annotations.
+
+## Rôles métier
+
+- `ROLE_SECRETAIRE` : RDV, événements, notes.
+- `ROLE_ELU` : + décrets (maire et adjoint).
+- `ROLE_MAIRE` : + promotion (`JobAssignment` + `AssignJobProcessor`) ; Discord doit suivre.
+- Ne pas accorder `ROLE_ADMIN` via une fonction métier.

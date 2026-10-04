@@ -1,0 +1,36 @@
+---
+description: Workflow Doctrine migrations dans le conteneur api
+globs: apps/api/migrations/**/*
+alwaysApply: false
+---
+
+# Migrations Doctrine
+
+## Processus
+
+1. Modifier l'entité / enums (PHP 8.3, attributs ORM).
+2. Générer la migration dans Docker — ne pas écrire le SQL à la main sauf cas justifié.
+
+```bash
+docker compose exec api php bin/console make:migration
+docker compose exec api php bin/console doctrine:migrations:migrate --no-interaction
+docker compose exec api php bin/console doctrine:schema:validate
+```
+
+3. Relire le fichier `migrations/Version*.php` : up **et** down cohérents, pas de drop silencieux de données.
+
+## Règles
+
+- Une intention métier ≈ une migration ; pas de regroupement fourre-tout avec du code non lié.
+- Ne jamais éditer une migration **déjà appliquée** en partagée / prod : en créer une nouvelle.
+- Noms de tables explicites (`notes`, `decrees`, `users`) ; colonnes alignées sur les asserts de l'entité.
+- Champs serveur (`authoredAt`, références `DEC-…`) : défauts / listeners côté app, pas trustés depuis l'API.
+
+## Prod
+
+- `AUTO_MIGRATE=0` en production : les migrations se jouent volontairement.
+- Vérifier `doctrine:migrations:status` avant de déclarer le schéma prêt.
+
+## Front
+
+Tout changement de contrat exposé (champs, enums) → mettre à jour `apps/web/src/lib/api.ts` et les pages concernées dans le même lot de travail.

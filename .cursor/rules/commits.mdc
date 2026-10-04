@@ -1,0 +1,40 @@
+---
+description: Quand et comment committer dans ce dépôt
+alwaysApply: true
+---
+
+# Commits
+
+## Déclenchement
+
+- **Uniquement** si l'utilisateur demande explicitement un commit.
+- Sinon : laisser les changements en working tree, résumer ce qui est prêt à committer.
+
+## Contenu
+
+- Un commit = une intention (feature, fix, refactor, chore, test).
+- Inclure API + front + migration du même changement plutôt que de les séparer artificiellement.
+- Exclure `.env`, secrets, clés JWT, tokens Discord, fichiers locaux non liés.
+
+## Message
+
+- Anglais, impératif, 1–2 phrases centrées sur le *pourquoi*.
+- Pas de dump de fichiers ni de « WIP » vague.
+
+```
+# ❌ BAD
+update stuff
+fix bug
+# ✅ GOOD
+Require mayor role before Discord job reassignment.
+Keep decree references server-assigned on create.
+```
+
+## Commandes (quand demandé)
+
+1. `git status` + `git diff` + `git log` (style récent)
+2. `git add` des chemins pertinents seulement
+3. `git commit` avec message via HEREDOC / here-string
+4. `git status` de vérification
+
+Interdit sans demande : `push`, `--no-verify`, amend risqué, rewrite d'historique, `git config`.
