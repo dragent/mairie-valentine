@@ -29,8 +29,10 @@ security:
         - { path: ^/api$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
+    # The mayor and his deputy share ROLE_ELU, which is what opens the decrees;
+    # ROLE_MAIRE only sets the mayor apart to gate the promotion panel.
     role_hierarchy:
-        ROLE_AGENT: [ROLE_USER]
-        ROLE_ADJOINT: [ROLE_AGENT]
-        ROLE_MAIRE: [ROLE_ADJOINT]
+        ROLE_SECRETAIRE: [ROLE_USER]
+        ROLE_ELU: [ROLE_SECRETAIRE]
+        ROLE_MAIRE: [ROLE_ELU]
         ROLE_ADMIN: [ROLE_MAIRE, ROLE_ALLOWED_TO_SWITCH]

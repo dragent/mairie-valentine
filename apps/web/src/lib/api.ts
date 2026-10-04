@@ -37,7 +37,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   });
 
   if (!response.ok) {
-    throw new ApiError(response.status, `${init.method ?? "GET"} ${path} a répondu ${response.status}`);
+    throw new ApiError(response.status, await readErrorMessage(response, init.method ?? "GET", path));
   }
 
   if (response.status === 204) {
@@ -47,6 +47,36 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   return (await response.json()) as T;
 }
 
+/**
+ * API Platform answers errors with a `detail` worth showing as is, be it a
+ * validation message or a Discord refusing a promotion.
+ */
+async function readErrorMessage(response: Response, method: string, path: string): Promise<string> {
+  try {
+    const payload = (await response.json()) as { detail?: unknown };
+
+    if (typeof payload.detail === "string" && payload.detail !== "") {
+      return payload.detail;
+    }
+  } catch {
+    // Not every error comes back as JSON.
+  }
+
+  return `${method} ${path} a répondu ${response.status}`;
+}
+
+export const ROLE_SECRETAIRE = "ROLE_SECRETAIRE";
+export const ROLE_ELU = "ROLE_ELU";
+export const ROLE_MAIRE = "ROLE_MAIRE";
+
+export type Job = "maire" | "adjoint" | "secretaire";
+
+export const JOB_LABELS: Record<Job, string> = {
+  maire: "Maire",
+  adjoint: "Maire adjoint",
+  secretaire: "Secrétaire de mairie",
+};
+
 export type CurrentUser = {
   id: number;
   discordId: string;
@@ -54,10 +84,40 @@ export type CurrentUser = {
   displayName: string | null;
   email: string | null;
   avatarUrl: string | null;
+  job: Job | null;
+  jobLabel: string | null;
   roles: string[];
   lastLoginAt: string | null;
 };
 
 export function fetchCurrentUser(token: string): Promise<CurrentUser> {
   return apiFetch<CurrentUser>("/api/me", { token, cache: "no-store" });
+}
+
+export type StaffMember = {
+  id: number;
+  discordId: string;
+  username: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  job?: Job | null;
+  jobLabel?: string | null;
+  lastLoginAt?: string | null;
+};
+
+export function fetchStaff(token: string): Promise<StaffMember[]> {
+  return apiFetch<StaffMember[]>("/api/users", { token, cache: "no-store" });
+}
+
+/**
+ * Hands a position over, or takes it back with `null`. The API rewrites the
+ * Discord roles before answering, so a failure here means nothing changed.
+ */
+export function assignJob(token: string, id: number, job: Job | null): Promise<StaffMember> {
+  return apiFetch<StaffMember>(`/api/users/${id}`, {
+    token,
+    method: "PATCH",
+    headers: { "Content-Type": "application/merge-patch+json" },
+    body: JSON.stringify({ job }),
+  });
 }

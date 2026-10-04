@@ -7,18 +7,26 @@ namespace App\Security\Discord;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpExceptionInterface;
 use Wohali\OAuth2\Client\Provider\DiscordResourceOwner;
 
 /**
  * Creates the local account on first sign-in and keeps the Discord profile in
- * sync on every subsequent one. Roles are never touched here: they are managed
- * from the back office.
+ * sync on every subsequent one, including the town hall position: the guild
+ * roles decide who is mayor, deputy or secretary.
+ *
+ * ROLE_ADMIN, which no position grants, is left untouched.
  */
 final readonly class DiscordUserProvisioner
 {
     public function __construct(
         private UserRepository $users,
         private EntityManagerInterface $entityManager,
+        private DiscordApi $discordApi,
+        private JobRoleMap $roleMap,
+        #[Autowire('%env(DISCORD_GUILD_ID)%')]
+        private string $guildId,
     ) {
     }
 
@@ -37,10 +45,31 @@ final readonly class DiscordUserProvisioner
             ->setAvatarUrl($this->avatarUrl($discordId, $profile['avatar'] ?? null))
             ->touchLastLogin();
 
+        $this->syncJob($user);
+
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
         return $user;
+    }
+
+    private function syncJob(User $user): void
+    {
+        // Without a guild or a bot, there is nothing to read the roles from and
+        // the position stays whatever it already is in database.
+        if ('' === $this->guildId || !$this->discordApi->hasBotToken() || !$this->roleMap->isConfigured()) {
+            return;
+        }
+
+        try {
+            $roleIds = $this->discordApi->fetchMemberRoleIds($this->guildId, $user->getDiscordId());
+        } catch (HttpExceptionInterface|DiscordApiException) {
+            // Discord is unreachable: keep the last known position rather than
+            // locking the whole town hall out of its own workspace.
+            return;
+        }
+
+        $user->setJob(null === $roleIds ? null : $this->roleMap->resolveJob($roleIds));
     }
 
     private function avatarUrl(string $discordId, ?string $hash): ?string

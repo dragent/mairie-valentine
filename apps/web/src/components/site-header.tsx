@@ -3,16 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { discordLoginUrl } from "@/lib/api";
+import { ROLE_SECRETAIRE, discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
+/**
+ * `role` restricts a link to the staff holding it; the others are public.
+ */
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/compte", label: "Mon espace" },
+  { href: "/mairie", label: "Mairie", role: ROLE_SECRETAIRE },
 ];
 
 export function SiteHeader() {
-  const { user, isLoading, signOut } = useAuth();
+  const { user, isLoading, signOut, hasRole } = useAuth();
+  const links = NAV_LINKS.filter((link) => link.role === undefined || hasRole(link.role));
 
   return (
     <header className="border-b border-line bg-surface">
@@ -22,7 +27,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-6 text-sm">
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <Link key={link.href} href={link.href} className="text-muted hover:text-foreground">
               {link.label}
             </Link>
