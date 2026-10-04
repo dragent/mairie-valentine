@@ -94,6 +94,129 @@ export function fetchCurrentUser(token: string): Promise<CurrentUser> {
   return apiFetch<CurrentUser>("/api/me", { token, cache: "no-store" });
 }
 
+/**
+ * API Platform leaves null properties out of its payloads, hence the optional
+ * fields below on everything that is nullable server-side.
+ */
+type Authored = {
+  createdAt: string;
+  updatedAt: string;
+  authorName?: string | null;
+};
+
+export type AppointmentStatus = "scheduled" | "honored" | "cancelled";
+
+export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
+  scheduled: "Prévu",
+  honored: "Honoré",
+  cancelled: "Annulé",
+};
+
+export type Appointment = Authored & {
+  id: number;
+  subject: string;
+  citizenName: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  location?: string | null;
+  status: AppointmentStatus;
+  notes?: string | null;
+};
+
+export type AppointmentInput = {
+  subject: string;
+  citizenName: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  location: string | null;
+  status: AppointmentStatus;
+  notes: string | null;
+};
+
+export type MunicipalEvent = Authored & {
+  id: number;
+  title: string;
+  description?: string | null;
+  startsAt: string;
+  endsAt?: string | null;
+  location?: string | null;
+};
+
+export type MunicipalEventInput = {
+  title: string;
+  description: string | null;
+  startsAt: string;
+  endsAt: string | null;
+  location: string | null;
+};
+
+export type Note = Authored & {
+  id: number;
+  title: string;
+  body: string;
+};
+
+export type NoteInput = {
+  title: string;
+  body: string;
+};
+
+export type DecreeStatus = "draft" | "published" | "repealed";
+
+export const DECREE_STATUS_LABELS: Record<DecreeStatus, string> = {
+  draft: "Brouillon",
+  published: "Publié",
+  repealed: "Abrogé",
+};
+
+export type Decree = Authored & {
+  id: number;
+  reference: string;
+  title: string;
+  body: string;
+  status: DecreeStatus;
+  publishedAt?: string | null;
+};
+
+export type DecreeInput = {
+  title: string;
+  body: string;
+  status: DecreeStatus;
+};
+
+type Resource<TRead, TWrite> = {
+  list: (token: string) => Promise<TRead[]>;
+  create: (token: string, payload: TWrite) => Promise<TRead>;
+  update: (token: string, id: number, payload: Partial<TWrite>) => Promise<TRead>;
+  remove: (token: string, id: number) => Promise<void>;
+};
+
+function resource<TRead, TWrite>(path: string): Resource<TRead, TWrite> {
+  return {
+    list: (token) => apiFetch<TRead[]>(path, { token, cache: "no-store" }),
+    create: (token, payload) =>
+      apiFetch<TRead>(path, {
+        token,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    update: (token, id, payload) =>
+      apiFetch<TRead>(`${path}/${id}`, {
+        token,
+        method: "PATCH",
+        headers: { "Content-Type": "application/merge-patch+json" },
+        body: JSON.stringify(payload),
+      }),
+    remove: (token, id) => apiFetch<void>(`${path}/${id}`, { token, method: "DELETE" }),
+  };
+}
+
+export const appointments = resource<Appointment, AppointmentInput>("/api/appointments");
+export const municipalEvents = resource<MunicipalEvent, MunicipalEventInput>("/api/municipal_events");
+export const notes = resource<Note, NoteInput>("/api/notes");
+export const decrees = resource<Decree, DecreeInput>("/api/decrees");
+
 export type StaffMember = {
   id: number;
   discordId: string;

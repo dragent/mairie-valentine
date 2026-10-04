@@ -3,10 +3,34 @@
 import Link from "next/link";
 
 import { RequireRole } from "@/components/require-role";
-import { ROLE_MAIRE, ROLE_SECRETAIRE } from "@/lib/api";
+import { ROLE_ELU, ROLE_MAIRE, ROLE_SECRETAIRE } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 const SPACES = [
+  {
+    href: "/mairie/rendez-vous",
+    title: "Rendez-vous",
+    description: "Tenue du registre des rendez-vous pris au guichet.",
+    role: ROLE_SECRETAIRE,
+  },
+  {
+    href: "/mairie/evenements",
+    title: "Événements",
+    description: "Conseils municipaux, foires et audiences publiques à venir.",
+    role: ROLE_SECRETAIRE,
+  },
+  {
+    href: "/mairie/notes",
+    title: "Notes",
+    description: "Mémos du secrétariat, consultables par toute la mairie.",
+    role: ROLE_SECRETAIRE,
+  },
+  {
+    href: "/mairie/decrets",
+    title: "Décrets",
+    description: "Rédaction et publication des décrets municipaux.",
+    role: ROLE_ELU,
+  },
   {
     href: "/mairie/personnel",
     title: "Personnel",
