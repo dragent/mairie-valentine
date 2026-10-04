@@ -63,10 +63,15 @@
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
         },
+        "clean-public-bundles": [
+            "@php bin/clean-public-bundles.php"
+        ],
         "post-install-cmd": [
+            "@clean-public-bundles",
             "@auto-scripts"
         ],
         "post-update-cmd": [
+            "@clean-public-bundles",
             "@auto-scripts"
         ]
     },

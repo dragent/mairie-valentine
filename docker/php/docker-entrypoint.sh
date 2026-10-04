@@ -11,6 +11,9 @@ mkdir -p var/cache var/log config/jwt
 
 if [ "$APP_ENV" != 'prod' ] && [ ! -f vendor/autoload_runtime.php ]; then
 	echo '[entrypoint] Installing Composer dependencies...'
+	# Bind mounts (Windows especially) leave stale assets:install temp dirs that
+	# make Composer's assets:install auto-script fail with "Directory not empty".
+	rm -rf public/bundles
 	composer install --prefer-dist --no-progress --no-interaction
 fi
 
