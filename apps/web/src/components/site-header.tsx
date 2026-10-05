@@ -7,7 +7,7 @@ import { ROLE_SECRETAIRE, discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 /**
- * `role` restricts a link to the staff holding it; the others are public.
+ * Links without `role` are shown only when signed in; `role` restricts staff links.
  */
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
@@ -17,7 +17,13 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   const { user, isLoading, signOut, hasRole } = useAuth();
-  const links = NAV_LINKS.filter((link) => link.role === undefined || hasRole(link.role));
+  const links = NAV_LINKS.filter((link) => {
+    if (link.role !== undefined) {
+      return hasRole(link.role);
+    }
+
+    return user !== null;
+  });
 
   return (
     <header className="border-b border-line bg-surface">
