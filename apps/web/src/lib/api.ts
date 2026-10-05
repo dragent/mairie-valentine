@@ -109,15 +109,29 @@ export function fetchStaff(token: string): Promise<StaffMember[]> {
   return apiFetch<StaffMember[]>("/api/users", { token, cache: "no-store" });
 }
 
+export type GuildMember = {
+  discordId: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  job: Job | null;
+  jobLabel: string | null;
+};
+
+export function fetchGuildMembers(token: string): Promise<GuildMember[]> {
+  return apiFetch<GuildMember[]>("/api/guild-members", { token, cache: "no-store" });
+}
+
 /**
- * Hands a position over, or takes it back with `null`. The API rewrites the
- * Discord roles before answering, so a failure here means nothing changed.
+ * Hands a Discord member a position, or takes it back with `null`.
+ * `maire` cedes the seat: the successor becomes the only mayor.
+ * The API rewrites the Discord roles before answering, so a failure means nothing changed.
  */
-export function assignJob(token: string, id: number, job: Job | null): Promise<StaffMember> {
-  return apiFetch<StaffMember>(`/api/users/${id}`, {
+export function promoteMember(token: string, discordId: string, job: Job | null): Promise<StaffMember> {
+  return apiFetch<StaffMember>("/api/promotions", {
     token,
-    method: "PATCH",
-    headers: { "Content-Type": "application/merge-patch+json" },
-    body: JSON.stringify({ job }),
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ discordId, job }),
   });
 }

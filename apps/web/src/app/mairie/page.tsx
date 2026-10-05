@@ -3,15 +3,15 @@
 import Link from "next/link";
 
 import { RequireRole } from "@/components/require-role";
-import { ROLE_MAIRE, ROLE_SECRETAIRE } from "@/lib/api";
+import { ROLE_ELU, ROLE_SECRETAIRE } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 const SPACES = [
   {
     href: "/mairie/personnel",
     title: "Personnel",
-    description: "Attribution des fonctions aux agents de la mairie.",
-    role: ROLE_MAIRE,
+    description: "Recruter les secrétaires. Le maire y nomme aussi les adjoints et peut céder sa place.",
+    role: ROLE_ELU,
   },
 ];
 

@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Dto\JobAssignment;
 use App\Enum\Job;
 use App\Repository\UserRepository;
@@ -20,9 +21,10 @@ use Symfony\Component\Serializer\Attribute\Groups;
 /**
  * An account, always backed by a Discord one.
  *
- * The elected officials may browse the register of accounts; only the mayor may
- * hand out a position, and he does so through {@see JobAssignment} rather than
- * by writing the column directly, because the Discord roles have to follow.
+ * The elected officials may browse the register of accounts. The mayor hands
+ * out any position and the deputy mayor recruits secretaries, both through
+ * {@see JobAssignment} rather than by writing the column directly, because the
+ * Discord roles have to follow.
  */
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
@@ -31,9 +33,18 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new GetCollection(security: "is_granted('ROLE_ELU')"),
         new Get(security: "is_granted('ROLE_ELU')"),
         new Patch(
-            security: "is_granted('ROLE_MAIRE')",
+            security: "is_granted('ROLE_ELU')",
             input: JobAssignment::class,
             processor: AssignJobProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/promotions',
+            status: 200,
+            security: "is_granted('ROLE_ELU')",
+            input: JobAssignment::class,
+            output: User::class,
+            processor: AssignJobProcessor::class,
+            read: false,
         ),
     ],
     normalizationContext: ['groups' => ['user:read']],

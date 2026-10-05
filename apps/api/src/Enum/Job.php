@@ -26,8 +26,9 @@ enum Job: string
     }
 
     /**
-     * The mayor and his deputy share ROLE_ELU; only the mayor also gets
-     * ROLE_MAIRE, which is what gates the promotion panel.
+     * The mayor and his deputy share ROLE_ELU. Only the mayor also gets
+     * ROLE_MAIRE, which reserves naming deputies and ceding the seat. The
+     * deputy recruits secretaries with ROLE_ELU alone.
      *
      * @return list<string>
      */
