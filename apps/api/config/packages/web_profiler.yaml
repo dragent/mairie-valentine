@@ -4,7 +4,8 @@ when@dev:
 
     framework:
         profiler:
-            collect_serializer_data: true
+            # API Platform responses make this collection dominate the request.
+            collect_serializer_data: false
 
 when@test:
     framework:

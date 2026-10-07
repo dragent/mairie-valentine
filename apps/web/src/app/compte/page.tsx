@@ -41,8 +41,8 @@ export default function AccountPage() {
           <dd className="text-sm">{user.email ?? "non communiquée"}</dd>
         </div>
         <div>
-          <dt className="text-sm text-muted">Fonctions</dt>
-          <dd className="text-sm">{user.roles.join(", ")}</dd>
+          <dt className="text-sm text-muted">Fonction</dt>
+          <dd className="text-sm">{user.jobLabel ?? "Citoyen de Valentine"}</dd>
         </div>
         <div>
           <dt className="text-sm text-muted">Dernière connexion</dt>

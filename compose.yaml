@@ -45,11 +45,19 @@ services:
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
       DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      DISCORD_ROLE_MAIRE: ${DISCORD_ROLE_MAIRE:-}
+      DISCORD_ROLE_ADJOINT: ${DISCORD_ROLE_ADJOINT:-}
+      DISCORD_ROLE_SECRETAIRE: ${DISCORD_ROLE_SECRETAIRE:-}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1,REMOTE_ADDR}
       XDEBUG_MODE: ${XDEBUG_MODE:-off}
     volumes:
       - ./apps/api:/var/www/html:cached
+      # Vendor stays in the Linux volume: reading it through the Windows share
+      # added several seconds to every request.
+      - api_vendor:/var/www/html/vendor
       - api_var:/var/www/html/var
+      - ./docker/php/conf.d/dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -109,5 +117,6 @@ services:
 volumes:
   db_data:
   api_var:
+  api_vendor:
   web_node_modules:
   web_next_cache:

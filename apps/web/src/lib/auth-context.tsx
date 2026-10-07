@@ -55,6 +55,7 @@ type AuthState = {
   isLoading: boolean;
   signIn: (token: string) => void;
   signOut: () => void;
+  reload: () => Promise<void>;
   hasRole: (role: string) => boolean;
 };
 
@@ -96,6 +97,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback((newToken: string) => writeToken(newToken), []);
   const signOut = useCallback(() => writeToken(null), []);
+  const reload = useCallback(() => {
+    if (token === null) {
+      return Promise.resolve();
+    }
+
+    return fetchCurrentUser(token).then((nextUser) => {
+      setProfile({ token, user: nextUser });
+    });
+  }, [token]);
 
   const value = useMemo<AuthState>(() => {
     const isResolved = profile?.token === token;
@@ -107,9 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: token !== null && !isResolved,
       signIn,
       signOut,
+      reload,
       hasRole: (role) => user?.roles.includes(role) ?? false,
     };
-  }, [profile, token, signIn, signOut]);
+  }, [profile, token, signIn, signOut, reload]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

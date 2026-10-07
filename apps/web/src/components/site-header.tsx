@@ -3,16 +3,27 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { discordLoginUrl } from "@/lib/api";
+import { ROLE_ELU, discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
+/**
+ * Links without `role` are shown when signed in; `role` restricts staff links.
+ */
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/compte", label: "Mon espace" },
+  { href: "/personnel", label: "Personnel", role: ROLE_ELU },
 ];
 
 export function SiteHeader() {
-  const { user, isLoading, signOut } = useAuth();
+  const { user, isLoading, signOut, hasRole } = useAuth();
+  const links = NAV_LINKS.filter((link) => {
+    if (link.role !== undefined) {
+      return hasRole(link.role);
+    }
+
+    return user !== null;
+  });
 
   return (
     <header className="border-b border-line bg-surface">
@@ -22,7 +33,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-6 text-sm">
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <Link key={link.href} href={link.href} className="text-muted hover:text-foreground">
               {link.label}
             </Link>

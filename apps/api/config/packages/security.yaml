@@ -29,8 +29,10 @@ security:
         - { path: ^/api$, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
+    # The mayor and his deputy share ROLE_ELU. The deputy may recruit
+    # secretaries; ROLE_MAIRE reserves naming deputies and ceding the seat.
     role_hierarchy:
-        ROLE_AGENT: [ROLE_USER]
-        ROLE_ADJOINT: [ROLE_AGENT]
-        ROLE_MAIRE: [ROLE_ADJOINT]
+        ROLE_SECRETAIRE: [ROLE_USER]
+        ROLE_ELU: [ROLE_SECRETAIRE]
+        ROLE_MAIRE: [ROLE_ELU]
         ROLE_ADMIN: [ROLE_MAIRE, ROLE_ALLOWED_TO_SWITCH]
