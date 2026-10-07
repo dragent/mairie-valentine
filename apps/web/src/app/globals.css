@@ -97,6 +97,51 @@ body > header {
   z-index: 30;
 }
 
+dialog.calendar-sheet {
+  position: fixed;
+  inset: 0;
+  width: min(64rem, calc(100vw - 2rem));
+  height: fit-content;
+  max-height: calc(100vh - 2rem);
+  margin: auto;
+  padding: 0;
+  border: none;
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+dialog.calendar-sheet::backdrop {
+  background: rgba(23, 19, 16, 0.72);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  dialog.calendar-sheet,
+  dialog.calendar-sheet * {
+    visibility: visible;
+  }
+
+  dialog.calendar-sheet {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    background: white;
+    color: black;
+  }
+
+  .calendar-sheet-actions,
+  .calendar-sheet-close {
+    display: none !important;
+  }
+}
+
 .ledger-frame {
   border: 1px solid var(--gold-dark);
   outline: 1px solid color-mix(in srgb, var(--gold-dark) 80%, transparent);

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError, apiFetch, promoteMember } from "@/lib/api";
-import { toApiDate, formatDate, formatDateTime } from "@/lib/dates";
+import { toApiDate, toLocalInput, formatDate, formatDateTime } from "@/lib/dates";
 import { describe as describeError } from "@/lib/use-resource";
 
 afterEach(() => {
@@ -100,5 +100,13 @@ describe("dates sent to the API", () => {
   it("renders a missing date as a dash", () => {
     expect(formatDateTime(null)).toBe("—");
     expect(formatDate(undefined)).toBe("—");
+  });
+
+  it("fills a local input from an instant", () => {
+    const iso = new Date(2026, 9, 7, 16, 30).toISOString();
+
+    expect(toLocalInput(null)).toBe("");
+    expect(toLocalInput(iso)).toBe("2026-10-07T16:30");
+    expect(toLocalInput(iso, false)).toBe("2026-10-07");
   });
 });

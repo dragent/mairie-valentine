@@ -13,9 +13,9 @@ const NAV_LINKS = [{ href: "/personnel", label: "Personnel", role: ROLE_ELU }];
 
 const MAIRIE_LINKS = [
   { href: "/mairie/calendrier", label: "Calendrier", role: ROLE_SECRETAIRE },
+  { href: "/mairie/decrets", label: "Décrets", role: ROLE_ELU },
   { href: "/mairie/evenements", label: "Événements", role: ROLE_SECRETAIRE },
   { href: "/mairie/rendez-vous", label: "Rendez-vous", role: ROLE_SECRETAIRE },
-  { href: "/mairie/decrets", label: "Décrets", role: ROLE_ELU },
 ];
 
 export function SiteHeader() {

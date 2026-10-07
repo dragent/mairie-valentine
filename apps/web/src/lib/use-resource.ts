@@ -16,6 +16,7 @@ export type ResourceState<TRead, TWrite> = {
   items: TRead[] | null;
   error: string | null;
   isBusy: boolean;
+  reload: () => void;
   create: (payload: TWrite) => Promise<boolean>;
   update: (id: number, payload: Partial<TWrite>) => Promise<boolean>;
   remove: (id: number) => Promise<boolean>;
@@ -89,6 +90,7 @@ export function useResource<TRead, TWrite>(
     items,
     error,
     isBusy,
+    reload: () => setRevision((previous) => previous + 1),
     create: (payload) => write((authenticated) => client.create(authenticated, payload)),
     update: (id, payload) => write((authenticated) => client.update(authenticated, id, payload)),
     remove: (id) => write((authenticated) => client.remove(authenticated, id)),

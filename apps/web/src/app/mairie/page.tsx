@@ -10,7 +10,19 @@ const SPACES = [
   {
     href: "/mairie/calendrier",
     title: "Calendrier",
-    description: "Événements, rendez-vous et, pour les élus, les décrets en cours.",
+    description: "Décrets en cours pour les élus, événements et rendez-vous.",
+    role: ROLE_SECRETAIRE,
+  },
+  {
+    href: "/mairie/decrets",
+    title: "Décrets",
+    description: "Rédaction et publication des décrets municipaux.",
+    role: ROLE_ELU,
+  },
+  {
+    href: "/mairie/evenements",
+    title: "Événements",
+    description: "Conseils municipaux, foires et audiences publiques à venir.",
     role: ROLE_SECRETAIRE,
   },
   {
@@ -20,22 +32,10 @@ const SPACES = [
     role: ROLE_SECRETAIRE,
   },
   {
-    href: "/mairie/evenements",
-    title: "Événements",
-    description: "Conseils municipaux, foires et audiences publiques à venir.",
-    role: ROLE_SECRETAIRE,
-  },
-  {
     href: "/mairie/notes",
     title: "Notes",
     description: "Mémos du secrétariat, consultables par toute la mairie.",
     role: ROLE_SECRETAIRE,
-  },
-  {
-    href: "/mairie/decrets",
-    title: "Décrets",
-    description: "Rédaction et publication des décrets municipaux.",
-    role: ROLE_ELU,
   },
   {
     href: "/mairie/personnel",
