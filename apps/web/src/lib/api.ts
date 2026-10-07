@@ -102,6 +102,7 @@ type Authored = {
   createdAt: string;
   updatedAt: string;
   authorName?: string | null;
+  authorJobLabel?: string | null;
 };
 
 export type AppointmentStatus = "scheduled" | "honored" | "cancelled";
@@ -150,15 +151,24 @@ export type MunicipalEventInput = {
   location: string | null;
 };
 
+export type NoteStatus = "current" | "archived";
+
+export const NOTE_STATUS_LABELS: Record<NoteStatus, string> = {
+  current: "Au greffe",
+  archived: "Archivée",
+};
+
 export type Note = Authored & {
   id: number;
   title: string;
   body: string;
+  status: NoteStatus;
 };
 
 export type NoteInput = {
   title: string;
   body: string;
+  status?: NoteStatus;
 };
 
 export type DecreeStatus = "draft" | "published" | "repealed";

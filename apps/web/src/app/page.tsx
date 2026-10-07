@@ -1,27 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import type { ReactNode } from "react";
 
-import { ROLE_ELU } from "@/lib/api";
+import { StaffNotes } from "@/components/staff-notes";
+import { ROLE_SECRETAIRE } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-
-const SERVICES = [
-  {
-    title: "Registre des citoyens",
-    description:
-      "Recensement des habitants de Valentine, état civil et consultation du casier judiciaire.",
-  },
-  {
-    title: "Documents officiels",
-    description:
-      "Délivrance des actes de propriété, licences de commerce et permis de port d'arme.",
-  },
-  {
-    title: "Arrêtés municipaux",
-    description: "Publication des décisions du conseil et affichage légal sur la place du marché.",
-  },
-];
 
 export default function HomePage() {
   const { user, isLoading, hasRole } = useAuth();
@@ -35,44 +19,63 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-12">
-      <section className="space-y-4">
-        <h1 className="font-display text-4xl text-heading">Mairie de Valentine</h1>
-        <p className="max-w-2xl text-lg text-muted">
-          Le classeur est ouvert. Les registres et services municipaux sont à votre disposition.
+    <OpenBinder signatory={user.displayName ?? user.username} office={user.jobLabel}>
+      {hasRole(ROLE_SECRETAIRE) ? (
+        <StaffNotes />
+      ) : (
+        <p className="text-muted">
+          Les notes du maire, des adjoints et des secrétaires sont réservées au personnel de la
+          mairie.
         </p>
-      </section>
+      )}
+    </OpenBinder>
+  );
+}
 
-      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {hasRole(ROLE_ELU) && (
-          <Link
-            href="/personnel"
-            className="rounded-lg border border-line bg-surface p-6 shadow-sm hover:border-accent"
-          >
-            <h2 className="font-display text-lg text-heading">Personnel</h2>
-            <p className="mt-3 text-sm text-muted">
-              Recruter les secrétaires. Le maire y nomme aussi les adjoints et peut céder sa place.
-            </p>
-          </Link>
-        )}
-        {SERVICES.map((service) => (
-          <article
-            key={service.title}
-            className="rounded-lg border border-line bg-surface p-6 shadow-sm"
-          >
-            <h2 className="font-display text-lg text-heading">{service.title}</h2>
-            <p className="mt-3 text-sm text-muted">{service.description}</p>
-          </article>
-        ))}
-      </section>
-    </div>
+function OpenBinder({
+  signatory,
+  office,
+  children,
+}: {
+  signatory: string;
+  office: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <section className="ledger-frame bg-surface px-8 py-8 sm:px-10">
+      <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+        <Image
+          src="/sceau-mairie.png"
+          alt=""
+          width={112}
+          height={112}
+          className="size-28 shrink-0 object-contain"
+        />
+        <div className="space-y-3 text-center sm:text-left">
+          <p className="text-xs tracking-[0.28em] text-gold-dark uppercase">Greffe municipal</p>
+          <h1 className="font-display text-4xl text-heading">Classeur ouvert</h1>
+          <p className="text-sm text-accent">
+            {office ? `${office} — ${signatory}` : signatory}
+          </p>
+        </div>
+      </div>
+
+      <p className="mt-8 max-w-2xl text-center leading-relaxed sm:text-left">
+        Le sceau a été rompu. Les registres, les arrêtés et la correspondance de l&apos;administration
+        municipale sont à votre disposition.
+      </p>
+
+      <Ornament />
+
+      {children}
+    </section>
   );
 }
 
 function SealedBinder() {
   return (
     <section className="m-auto w-full max-w-xl">
-      <article className="rounded-lg border-2 border-gold-dark bg-surface px-8 py-10 text-center shadow-sm">
+      <article className="ledger-frame bg-surface px-8 py-10 text-center">
         <Image
           src="/sceau-mairie.png"
           alt=""
@@ -93,5 +96,15 @@ function SealedBinder() {
         </p>
       </article>
     </section>
+  );
+}
+
+function Ornament() {
+  return (
+    <div className="my-8 flex items-center gap-4" aria-hidden="true">
+      <span className="h-px flex-1 bg-gold-dark/70" />
+      <span className="size-1.5 rotate-45 bg-gold-dark" />
+      <span className="h-px flex-1 bg-gold-dark/70" />
+    </div>
   );
 }

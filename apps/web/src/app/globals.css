@@ -96,3 +96,10 @@ body > * {
 body > header {
   z-index: 30;
 }
+
+.ledger-frame {
+  border: 1px solid var(--gold-dark);
+  outline: 1px solid color-mix(in srgb, var(--gold-dark) 80%, transparent);
+  outline-offset: -4px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}

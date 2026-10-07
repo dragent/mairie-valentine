@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use App\Enum\NoteStatus;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -49,6 +50,10 @@ class Note implements AuthoredEntity
     #[Assert\NotBlank(message: 'Une note vide ne sert à rien.')]
     private string $body = '';
 
+    #[ORM\Column(length: 16, enumType: NoteStatus::class, options: ['default' => 'current'])]
+    #[Groups(['note:read', 'note:write'])]
+    private NoteStatus $status = NoteStatus::CURRENT;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -74,6 +79,18 @@ class Note implements AuthoredEntity
     public function setBody(string $body): self
     {
         $this->body = $body;
+
+        return $this;
+    }
+
+    public function getStatus(): NoteStatus
+    {
+        return $this->status;
+    }
+
+    public function setStatus(NoteStatus $status): self
+    {
+        $this->status = $status;
 
         return $this;
     }
