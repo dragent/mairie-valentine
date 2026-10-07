@@ -18,8 +18,10 @@ final readonly class EventPosterStore
         'image/webp' => 'webp',
     ];
 
-    public function __construct(private string $directory)
-    {
+    public function __construct(
+        private string $directory,
+        private string $publicDirectory = 'events',
+    ) {
     }
 
     public function store(string $pathname): string
@@ -52,12 +54,14 @@ final readonly class EventPosterStore
             throw new EventPosterException('L\'affiche n\'a pas pu être enregistrée.');
         }
 
-        return 'uploads/events/'.$name;
+        return 'uploads/'.$this->publicDirectory.'/'.$name;
     }
 
     public function delete(?string $publicPath): void
     {
-        if (1 !== preg_match('#\Auploads/events/[a-f0-9]{32}\.(jpg|png|webp)\z#', (string) $publicPath)) {
+        $folder = preg_quote($this->publicDirectory, '#');
+
+        if (1 !== preg_match('#\Auploads/'.$folder.'/[a-f0-9]{32}\.(jpg|png|webp)\z#', (string) $publicPath)) {
             return;
         }
 

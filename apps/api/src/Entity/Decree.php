@@ -16,6 +16,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * A municipal decree. Reserved to the elected officials: the secretary may read
@@ -64,9 +65,24 @@ class Decree implements AuthoredEntity
     #[Groups(['decree:read', 'decree:write'])]
     private DecreeStatus $status = DecreeStatus::DRAFT;
 
+    /**
+     * Chosen when the decree is published. A draft carries none. Once the
+     * period has ended the decree is repealed, and these dates stay.
+     */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Groups(['decree:read', 'decree:write'])]
+    private ?\DateTimeImmutable $startsAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Groups(['decree:read', 'decree:write'])]
+    private ?\DateTimeImmutable $endsAt = null;
+
+    /**
+     * Public path under public/uploads. The client never chooses it.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['decree:read'])]
-    private ?\DateTimeImmutable $publishedAt = null;
+    private ?string $posterPath = null;
 
     public function getId(): ?int
     {
@@ -118,16 +134,90 @@ class Decree implements AuthoredEntity
     {
         $this->status = $status;
 
-        // Publication is dated once and for all; repealing does not erase it.
-        if (DecreeStatus::PUBLISHED === $status && null === $this->publishedAt) {
-            $this->publishedAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    /**
+     * The last day is still in force. The next morning, the decree is repealed.
+     */
+    public function repealIfThePeriodHasEnded(\DateTimeImmutable $today): void
+    {
+        if (DecreeStatus::PUBLISHED !== $this->status || null === $this->endsAt) {
+            return;
         }
+
+        $zone = $today->getTimezone();
+
+        if ($this->endsAt->setTimezone($zone)->format('Y-m-d') < $today->format('Y-m-d')) {
+            $this->status = DecreeStatus::REPEALED;
+        }
+    }
+
+    public function getStartsAt(): ?\DateTimeImmutable
+    {
+        return $this->startsAt;
+    }
+
+    public function setStartsAt(?\DateTimeImmutable $startsAt): self
+    {
+        $this->startsAt = $startsAt;
 
         return $this;
     }
 
-    public function getPublishedAt(): ?\DateTimeImmutable
+    public function getEndsAt(): ?\DateTimeImmutable
     {
-        return $this->publishedAt;
+        return $this->endsAt;
+    }
+
+    public function setEndsAt(?\DateTimeImmutable $endsAt): self
+    {
+        $this->endsAt = $endsAt;
+
+        return $this;
+    }
+
+    public function getPosterPath(): ?string
+    {
+        return $this->posterPath;
+    }
+
+    public function setPosterPath(?string $posterPath): self
+    {
+        $this->posterPath = $posterPath;
+
+        return $this;
+    }
+
+    #[Assert\Callback]
+    public function validatePeriod(ExecutionContextInterface $context): void
+    {
+        $hasDates = null !== $this->startsAt || null !== $this->endsAt;
+
+        if (DecreeStatus::DRAFT === $this->status && $hasDates) {
+            $context->buildViolation('Un brouillon ne porte pas de date.')->addViolation();
+
+            return;
+        }
+
+        if (DecreeStatus::REPEALED === $this->status && $hasDates) {
+            $context->buildViolation('Un décret abrogé ne porte pas de date.')->addViolation();
+
+            return;
+        }
+
+        if (DecreeStatus::PUBLISHED !== $this->status) {
+            return;
+        }
+
+        if (null === $this->startsAt || null === $this->endsAt) {
+            $context->buildViolation('Indiquez la date de début et la date de fin.')->addViolation();
+
+            return;
+        }
+
+        if ($this->endsAt < $this->startsAt) {
+            $context->buildViolation('La date de fin ne peut précéder la date de début.')->addViolation();
+        }
     }
 }

@@ -186,13 +186,17 @@ export type Decree = Authored & {
   title: string;
   body: string;
   status: DecreeStatus;
-  publishedAt?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  posterPath?: string | null;
 };
 
 export type DecreeInput = {
   title: string;
   body: string;
   status: DecreeStatus;
+  startsAt?: string | null;
+  endsAt?: string | null;
 };
 
 type Resource<TRead, TWrite> = {
@@ -231,6 +235,17 @@ export function uploadEventPoster(token: string, id: number, file: File): Promis
   body.append("poster", file);
 
   return apiFetch<MunicipalEvent>(`/api/municipal_events/${id}/poster`, {
+    token,
+    method: "POST",
+    body,
+  });
+}
+
+export function uploadDecreePoster(token: string, id: number, file: File): Promise<Decree> {
+  const body = new FormData();
+  body.append("poster", file);
+
+  return apiFetch<Decree>(`/api/decrees/${id}/poster`, {
     token,
     method: "POST",
     body,

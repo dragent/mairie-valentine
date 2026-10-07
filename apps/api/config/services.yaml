@@ -20,5 +20,11 @@ services:
         arguments:
             $directory: '%kernel.project_dir%/public/uploads/events'
 
+    app.decree_poster_store:
+        class: App\Service\EventPosterStore
+        arguments:
+            $directory: '%kernel.project_dir%/public/uploads/decrees'
+            $publicDirectory: decrees
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

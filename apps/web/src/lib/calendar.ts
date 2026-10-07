@@ -93,11 +93,11 @@ export function buildMonth(
   }
 
   for (const decree of decrees) {
-    if (decree.status !== "published" || !decree.publishedAt) {
+    if (decree.status !== "published" || !decree.startsAt || !decree.endsAt) {
       continue;
     }
 
-    place(byDay, spanKeys(decree.publishedAt, null), (key) => ({
+    place(byDay, spanKeys(decree.startsAt, decree.endsAt), (key) => ({
       id: `decree-${decree.id}-${key}`,
       kind: "decree",
       label: decree.title,
