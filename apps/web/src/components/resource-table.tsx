@@ -75,15 +75,17 @@ export function ResourceForm({
   isBusy,
   onSubmit,
   children,
+  className = "rounded-lg border border-line bg-surface p-6",
 }: {
   legend: string;
   submitLabel: string;
   isBusy: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <form onSubmit={onSubmit} className="rounded-lg border border-line bg-surface p-6">
+    <form onSubmit={onSubmit} className={className}>
       <fieldset disabled={isBusy} className="space-y-4">
         <legend className="font-display text-lg text-heading">{legend}</legend>
 

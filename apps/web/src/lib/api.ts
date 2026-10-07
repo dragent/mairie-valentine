@@ -102,6 +102,7 @@ type Authored = {
   createdAt: string;
   updatedAt: string;
   authorName?: string | null;
+  authorJobLabel?: string | null;
 };
 
 export type AppointmentStatus = "scheduled" | "honored" | "cancelled";
@@ -140,6 +141,7 @@ export type MunicipalEvent = Authored & {
   startsAt: string;
   endsAt?: string | null;
   location?: string | null;
+  posterPath?: string | null;
 };
 
 export type MunicipalEventInput = {
@@ -150,15 +152,24 @@ export type MunicipalEventInput = {
   location: string | null;
 };
 
+export type NoteStatus = "current" | "archived";
+
+export const NOTE_STATUS_LABELS: Record<NoteStatus, string> = {
+  current: "Au greffe",
+  archived: "Archivée",
+};
+
 export type Note = Authored & {
   id: number;
   title: string;
   body: string;
+  status: NoteStatus;
 };
 
 export type NoteInput = {
   title: string;
   body: string;
+  status?: NoteStatus;
 };
 
 export type DecreeStatus = "draft" | "published" | "repealed";
@@ -175,13 +186,17 @@ export type Decree = Authored & {
   title: string;
   body: string;
   status: DecreeStatus;
-  publishedAt?: string | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  posterPath?: string | null;
 };
 
 export type DecreeInput = {
   title: string;
   body: string;
   status: DecreeStatus;
+  startsAt?: string | null;
+  endsAt?: string | null;
 };
 
 type Resource<TRead, TWrite> = {
@@ -214,6 +229,28 @@ function resource<TRead, TWrite>(path: string): Resource<TRead, TWrite> {
 
 export const appointments = resource<Appointment, AppointmentInput>("/api/appointments");
 export const municipalEvents = resource<MunicipalEvent, MunicipalEventInput>("/api/municipal_events");
+
+export function uploadEventPoster(token: string, id: number, file: File): Promise<MunicipalEvent> {
+  const body = new FormData();
+  body.append("poster", file);
+
+  return apiFetch<MunicipalEvent>(`/api/municipal_events/${id}/poster`, {
+    token,
+    method: "POST",
+    body,
+  });
+}
+
+export function uploadDecreePoster(token: string, id: number, file: File): Promise<Decree> {
+  const body = new FormData();
+  body.append("poster", file);
+
+  return apiFetch<Decree>(`/api/decrees/${id}/poster`, {
+    token,
+    method: "POST",
+    body,
+  });
+}
 export const notes = resource<Note, NoteInput>("/api/notes");
 export const decrees = resource<Decree, DecreeInput>("/api/decrees");
 

@@ -4,13 +4,7 @@ import Image from "next/image";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { RequireRole } from "@/components/require-role";
-import {
-  ErrorBanner,
-  Field,
-  ResourceForm,
-  Select,
-  WorkspaceHeading,
-} from "@/components/resource-table";
+import { ErrorBanner, Field, ResourceForm, Select } from "@/components/resource-table";
 import {
   ApiError,
   ROLE_ELU,
@@ -161,164 +155,205 @@ export default function StaffPage() {
   const candidates = members?.filter((member) => member.discordId !== user?.discordId) ?? [];
   const listed = filterMembers(members ?? [], query);
   const needle = query.trim();
+  const signatory = user?.displayName ?? user?.username;
+  const signature = user?.jobLabel && signatory ? `${user.jobLabel} — ${signatory}` : signatory;
+  const showCession = isMayor && candidates.length > 0;
 
   return (
     <RequireRole role={ROLE_ELU}>
-      <div className="space-y-8">
-        <WorkspaceHeading
-          title="Personnel"
-          lead={staffLead(isMayor, notice !== null)}
-        />
+      <section className="ledger-frame bg-surface px-8 py-8 sm:px-10">
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+          <Image
+            src="/sceau-mairie.png"
+            alt=""
+            width={112}
+            height={112}
+            className="size-28 shrink-0 object-contain"
+          />
+          <div className="space-y-3 text-center sm:text-left">
+            <p className="text-xs tracking-[0.28em] text-gold-dark uppercase">Greffe municipal</p>
+            <h1 className="font-display text-4xl text-heading">Personnel</h1>
+            {signature && <p className="text-sm text-accent">{signature}</p>}
+          </div>
+        </div>
 
-        {notice && <p className="text-sm text-muted">{notice}</p>}
+        <p className="mt-8 max-w-2xl text-center leading-relaxed sm:text-left">
+          {staffLead(isMayor, notice !== null)}
+        </p>
+
+        <Ornament />
+
+        {notice && <p className="mb-6 text-sm text-muted">{notice}</p>}
 
         <ErrorBanner message={error} />
 
         {members === null && error === null ? (
           <p className="text-muted">Chargement…</p>
         ) : members === null || members.length === 0 ? (
-          <p className="rounded-lg border border-line bg-surface p-6 text-sm text-muted">
-            Aucun habitant à afficher.
-          </p>
+          <p className="text-sm text-muted">Aucun habitant à afficher.</p>
         ) : (
-          <div className="space-y-8">
-            {showMemberSearch(members.length) && (
-              <label className="block space-y-1 text-sm">
-                <span className="text-muted">Rechercher un habitant</span>
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  className="w-full rounded-md border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent sm:max-w-sm"
-                />
-              </label>
-            )}
+          <div
+            className={
+              showCession ? "grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]" : undefined
+            }
+          >
+            <div className="space-y-10">
+              {showMemberSearch(members.length) && (
+                <label className="block max-w-sm space-y-2 text-sm">
+                  <span className="text-xs tracking-wide text-muted">Rechercher un habitant</span>
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    className="w-full rounded-md border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
+                  />
+                </label>
+              )}
 
-            {needle !== "" && listed.length === 0 ? (
-              <p className="text-sm text-muted">Aucun habitant ne correspond à cette recherche.</p>
-            ) : (
-              OFFICES.map((office) => {
-                const group = listed.filter((member) => member.job === office.job);
+              {needle !== "" && listed.length === 0 ? (
+                <p className="text-sm text-muted">Aucun habitant ne correspond à cette recherche.</p>
+              ) : (
+                OFFICES.map((office) => {
+                  const group = listed.filter((member) => member.job === office.job);
 
-                if (needle !== "" && group.length === 0) {
-                  return null;
-                }
+                  if (needle !== "" && group.length === 0) {
+                    return null;
+                  }
 
-                return (
-                  <section key={office.title} className="space-y-3">
-                    <h2 className="font-display text-lg text-heading">
-                      {office.title}
-                      {group.length > 1 && <span className="ml-2 font-sans text-sm text-muted">{group.length}</span>}
-                    </h2>
-                    {group.length === 0 ? (
-                      <p className="text-sm text-muted">{office.empty}</p>
-                    ) : (
-                      <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
-                        {group.map((member) => {
-                          const name = memberName(member);
-                          const isSelf = member.discordId === user?.discordId;
-                          const choices = officeChoices(member, user?.discordId, isMayor);
-                          const dismissible = canDismiss(member, user?.discordId, isMayor);
+                  return (
+                    <section key={office.title}>
+                      <h2 className="font-display text-2xl text-heading">
+                        {office.title}
+                        {group.length > 1 && <span className="ml-2 font-sans text-sm text-muted">{group.length}</span>}
+                      </h2>
+                      {group.length === 0 ? (
+                        <p className="mt-4 text-sm text-muted">{office.empty}</p>
+                      ) : (
+                        <ul className="mt-2 divide-y divide-line">
+                          {group.map((member) => {
+                            const name = memberName(member);
+                            const isSelf = member.discordId === user?.discordId;
+                            const choices = officeChoices(member, user?.discordId, isMayor);
+                            const dismissible = canDismiss(member, user?.discordId, isMayor);
 
-                          return (
-                            <li
-                              key={member.discordId}
-                              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                            >
-                              <span className="flex min-w-0 items-center gap-3">
-                                {member.avatarUrl ? (
-                                  <Image
-                                    src={member.avatarUrl}
-                                    alt=""
-                                    width={32}
-                                    height={32}
-                                    className="size-8 rounded-full border border-line"
-                                  />
-                                ) : (
-                                  <span className="flex size-8 items-center justify-center rounded-full border border-line text-xs text-muted">
-                                    {name.slice(0, 1).toUpperCase()}
-                                  </span>
-                                )}
-                                <span className="min-w-0">
-                                  <span className="block truncate">{name}</span>
-                                  {member.displayName !== null && member.displayName !== member.username && (
-                                    <span className="block truncate text-xs text-muted">{member.username}</span>
-                                  )}
-                                </span>
-                              </span>
-
-                              {isSelf ? (
-                                <span className="text-xs uppercase tracking-wide text-muted">Vous</span>
-                              ) : choices.length === 0 && !dismissible ? null : (
-                                <span className="flex flex-wrap items-center gap-3">
-                                  {choices.length > 0 && (
-                                    <span className="w-52">
-                                      <Select
-                                        value={member.job ?? CITIZEN_VALUE}
-                                        disabled={isBusy}
-                                        aria-label={`Fonction de ${name}`}
-                                        onChange={(event) => {
-                                          const value = event.target.value;
-                                          void changeJob(
-                                            member.discordId,
-                                            value === CITIZEN_VALUE ? null : (value as Job),
-                                          );
-                                        }}
-                                      >
-                                        {choices.map((choice) => (
-                                          <option key={choice.value} value={choice.value}>
-                                            {choice.label}
-                                          </option>
-                                        ))}
-                                      </Select>
+                            return (
+                              <li
+                                key={member.discordId}
+                                className="flex flex-wrap items-center justify-between gap-4 py-5"
+                              >
+                                <span className="flex min-w-0 items-center gap-4">
+                                  {member.avatarUrl ? (
+                                    <Image
+                                      src={member.avatarUrl}
+                                      alt=""
+                                      width={40}
+                                      height={40}
+                                      className="size-10 rounded-full border border-gold-dark object-cover"
+                                    />
+                                  ) : (
+                                    <span className="flex size-10 items-center justify-center rounded-full border border-gold-dark font-display text-sm text-heading">
+                                      {name.slice(0, 1).toUpperCase()}
                                     </span>
                                   )}
-                                  {dismissible && (
-                                    <button
-                                      type="button"
-                                      disabled={isBusy}
-                                      aria-label={`Relever ${name} de sa charge`}
-                                      className="rounded-md border border-line px-3 py-2 text-sm text-foreground hover:border-accent hover:text-heading disabled:opacity-60"
-                                      onClick={() => void changeJob(member.discordId, null)}
-                                    >
-                                      Relever
-                                    </button>
-                                  )}
+                                  <span className="min-w-0">
+                                    <span className="block truncate font-display text-lg text-heading">{name}</span>
+                                    {member.displayName !== null && member.displayName !== member.username && (
+                                      <span className="block truncate text-xs tracking-wide text-muted">
+                                        {member.username}
+                                      </span>
+                                    )}
+                                  </span>
                                 </span>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </section>
-                );
-              })
+
+                                {isSelf ? (
+                                  <span className="text-xs tracking-[0.2em] text-gold-dark uppercase">Vous</span>
+                                ) : choices.length === 0 && !dismissible ? null : (
+                                  <span className="flex flex-wrap items-center gap-4">
+                                    {choices.length > 0 && (
+                                      <span className="w-52">
+                                        <Select
+                                          value={member.job ?? CITIZEN_VALUE}
+                                          disabled={isBusy}
+                                          aria-label={`Fonction de ${name}`}
+                                          onChange={(event) => {
+                                            const value = event.target.value;
+                                            void changeJob(
+                                              member.discordId,
+                                              value === CITIZEN_VALUE ? null : (value as Job),
+                                            );
+                                          }}
+                                        >
+                                          {choices.map((choice) => (
+                                            <option key={choice.value} value={choice.value}>
+                                              {choice.label}
+                                            </option>
+                                          ))}
+                                        </Select>
+                                      </span>
+                                    )}
+                                    {dismissible && (
+                                      <button
+                                        type="button"
+                                        disabled={isBusy}
+                                        aria-label={`Relever ${name} de sa charge`}
+                                        className="text-sm text-muted underline hover:text-foreground disabled:opacity-60"
+                                        onClick={() => void changeJob(member.discordId, null)}
+                                      >
+                                        Relever
+                                      </button>
+                                    )}
+                                  </span>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </section>
+                  );
+                })
+              )}
+            </div>
+
+            {showCession && (
+              <aside className="h-full bg-background/35 px-6 py-6 lg:border-l lg:border-line lg:pl-8">
+                <p className="text-sm leading-relaxed text-muted">{cessionHint(user?.job === "maire")}</p>
+                <ResourceForm
+                  className="mt-6 border-t border-line pt-8"
+                  legend="Céder la place"
+                  submitLabel="Céder la place"
+                  isBusy={isBusy}
+                  onSubmit={cede}
+                >
+                  <Field label="Nouveau maire" wide>
+                    <Select
+                      value={successorId}
+                      required
+                      onChange={(event) => setSuccessorId(event.target.value)}
+                    >
+                      <option value="">Choisir un membre</option>
+                      {candidates.map((member) => (
+                        <option key={member.discordId} value={member.discordId}>
+                          {memberName(member)}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                </ResourceForm>
+              </aside>
             )}
           </div>
         )}
-
-        {isMayor && candidates.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted">{cessionHint(user?.job === "maire")}</p>
-            <ResourceForm legend="Céder la place de maire" submitLabel="Céder la place" isBusy={isBusy} onSubmit={cede}>
-              <Field label="Nouveau maire" wide>
-                <Select
-                  value={successorId}
-                  required
-                  onChange={(event) => setSuccessorId(event.target.value)}
-                >
-                  <option value="">Choisir un membre</option>
-                  {candidates.map((member) => (
-                    <option key={member.discordId} value={member.discordId}>
-                      {memberName(member)}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            </ResourceForm>
-          </div>
-        )}
-      </div>
+      </section>
     </RequireRole>
+  );
+}
+
+function Ornament() {
+  return (
+    <div className="my-8 flex items-center gap-4" aria-hidden="true">
+      <span className="h-px flex-1 bg-gold-dark/70" />
+      <span className="size-1.5 rotate-45 bg-gold-dark" />
+      <span className="h-px flex-1 bg-gold-dark/70" />
+    </div>
   );
 }

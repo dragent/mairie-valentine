@@ -30,7 +30,7 @@ export default function AuthCallbackPage() {
     }
 
     signIn(token);
-    router.replace("/compte");
+    router.replace("/");
   }, [token, router, signIn]);
 
   const error =

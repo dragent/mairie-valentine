@@ -13,6 +13,31 @@ export function toApiDate(localValue: string): string | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
+export function toLocalInput(iso: string | null | undefined, withTime = true): string {
+  if (!iso) {
+    return "";
+  }
+
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const datePart = `${date.getFullYear()}-${month}-${day}`;
+
+  if (!withTime) {
+    return datePart;
+  }
+
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${datePart}T${hours}:${minutes}`;
+}
+
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) {
     return "—";

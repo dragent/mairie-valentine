@@ -1,8 +1,8 @@
-import type { Appointment, MunicipalEvent } from "@/lib/api";
+import type { Appointment, Decree, MunicipalEvent } from "@/lib/api";
 
 export type CalendarEntry = {
   id: string;
-  kind: "event" | "appointment";
+  kind: "event" | "appointment" | "decree";
   label: string;
   time: string;
   href: string;
@@ -17,19 +17,80 @@ export type CalendarCell = {
   entries: CalendarEntry[];
 };
 
+export type CalendarKind = CalendarEntry["kind"];
+
+const TOWN_YEAR = 1889;
+const CIVIL_YEAR = 2000;
+
+export function townToday(now = new Date()): Date {
+  return new Date(TOWN_YEAR, now.getMonth(), now.getDate());
+}
+
+export function townLayoutYear(townYear: number, now = new Date()): number {
+  return townYear + (now.getFullYear() - TOWN_YEAR);
+}
+
+export function townYearOf(year: number, now = new Date()): number {
+  if (year < CIVIL_YEAR) {
+    return year;
+  }
+
+  return year - (now.getFullYear() - TOWN_YEAR);
+}
+
 type Placed = CalendarEntry & { sort: number };
+
+const KIND_RANK: Record<CalendarEntry["kind"], number> = {
+  decree: 0,
+  event: 1,
+  appointment: 2,
+};
+
+export function countByKind(cells: CalendarCell[]): Record<CalendarKind, number> {
+  const seen = new Set<string>();
+  const counts: Record<CalendarKind, number> = { event: 0, appointment: 0, decree: 0 };
+
+  for (const cell of cells) {
+    if (!cell.inMonth) {
+      continue;
+    }
+
+    for (const entry of cell.entries) {
+      const source = entry.id.replace(/-\d{4}-\d{2}-\d{2}$/, "");
+
+      if (seen.has(source)) {
+        continue;
+      }
+
+      seen.add(source);
+      counts[entry.kind] += 1;
+    }
+  }
+
+  return counts;
+}
+
+export function filterByKind(cells: CalendarCell[], shown: Record<CalendarKind, boolean>): CalendarCell[] {
+  return cells.map((cell) => ({
+    ...cell,
+    entries: cell.entries.filter((entry) => shown[entry.kind]),
+  }));
+}
 
 export function buildMonth(
   year: number,
   monthIndex: number,
   events: MunicipalEvent[],
   appointments: Appointment[],
+  decrees: Decree[] = [],
+  layoutYear = year,
 ): CalendarCell[] {
-  const cells = visibleDays(year, monthIndex);
+  const yearShift = layoutYear - year;
+  const cells = visibleDays(year, monthIndex, layoutYear);
   const byDay = new Map<string, Placed[]>();
 
   for (const municipalEvent of events) {
-    place(byDay, spanKeys(municipalEvent.startsAt, municipalEvent.endsAt), (key, index) => ({
+    place(byDay, spanKeys(municipalEvent.startsAt, municipalEvent.endsAt, yearShift), (key, index) => ({
       id: `event-${municipalEvent.id}-${key}`,
       kind: "event",
       label: municipalEvent.title,
@@ -41,7 +102,7 @@ export function buildMonth(
   }
 
   for (const appointment of appointments) {
-    place(byDay, spanKeys(appointment.scheduledAt, null), (key) => ({
+    place(byDay, spanKeys(appointment.scheduledAt, null, yearShift), (key) => ({
       id: `appointment-${appointment.id}-${key}`,
       kind: "appointment",
       label: appointment.subject,
@@ -52,23 +113,47 @@ export function buildMonth(
     }));
   }
 
+  for (const decree of decrees) {
+    if (decree.status !== "published" || !decree.startsAt || !decree.endsAt) {
+      continue;
+    }
+
+    place(byDay, spanKeys(decree.startsAt, decree.endsAt, yearShift), (key) => ({
+      id: `decree-${decree.id}-${key}`,
+      kind: "decree",
+      label: decree.title,
+      time: "",
+      href: "/mairie/decrets",
+      muted: false,
+      sort: 0,
+    }));
+  }
+
   return cells.map((cell) => ({
     ...cell,
-    entries: (byDay.get(cell.key) ?? []).sort((left, right) => left.sort - right.sort || left.label.localeCompare(right.label, "fr")),
+    entries: (byDay.get(cell.key) ?? []).sort(
+      (left, right) =>
+        KIND_RANK[left.kind] - KIND_RANK[right.kind] ||
+        left.sort - right.sort ||
+        left.label.localeCompare(right.label, "fr"),
+    ),
   }));
 }
 
-function visibleDays(year: number, monthIndex: number): Omit<CalendarCell, "entries">[] {
-  const first = new Date(year, monthIndex, 1);
-  const cursor = new Date(year, monthIndex, 1 - mondayOffset(first));
+function visibleDays(year: number, monthIndex: number, layoutYear: number): Omit<CalendarCell, "entries">[] {
+  const first = new Date(layoutYear, monthIndex, 1);
+  const cursor = new Date(layoutYear, monthIndex, 1 - mondayOffset(first));
   const cells: Omit<CalendarCell, "entries">[] = [];
 
   do {
+    const month = cursor.getMonth();
+    const day = cursor.getDate();
+
     cells.push({
-      key: dayKey(cursor),
-      date: new Date(cursor),
-      day: cursor.getDate(),
-      inMonth: cursor.getMonth() === monthIndex,
+      key: dayKeyParts(year, month, day),
+      date: new Date(year, month, day),
+      day,
+      inMonth: month === monthIndex,
     });
     cursor.setDate(cursor.getDate() + 1);
   } while (cursor.getMonth() === monthIndex || cursor.getDay() !== 1);
@@ -80,11 +165,11 @@ function mondayOffset(date: Date): number {
   return (date.getDay() + 6) % 7;
 }
 
-function spanKeys(startIso: string, endIso: string | null | undefined): string[] {
+function spanKeys(startIso: string, endIso: string | null | undefined, yearShift: number): string[] {
   const start = new Date(startIso);
   const end = endIso ? new Date(endIso) : start;
-  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  const cursor = project(start, yearShift);
+  const last = project(end, yearShift);
 
   if (Number.isNaN(cursor.getTime())) {
     return [];
@@ -116,11 +201,21 @@ function place(
   });
 }
 
-function dayKey(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+function project(date: Date, yearShift: number): Date {
+  const year = date.getFullYear() >= CIVIL_YEAR ? date.getFullYear() - yearShift : date.getFullYear();
 
-  return `${date.getFullYear()}-${month}-${day}`;
+  return new Date(year, date.getMonth(), date.getDate());
+}
+
+function dayKey(date: Date): string {
+  return dayKeyParts(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function dayKeyParts(year: number, monthIndex: number, day: number): string {
+  const month = String(monthIndex + 1).padStart(2, "0");
+  const dayText = String(day).padStart(2, "0");
+
+  return `${year}-${month}-${dayText}`;
 }
 
 function formatTime(iso: string): string {

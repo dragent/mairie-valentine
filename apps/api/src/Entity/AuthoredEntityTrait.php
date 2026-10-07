@@ -49,6 +49,12 @@ trait AuthoredEntityTrait
         return $this->author?->getDisplayName() ?? $this->author?->getUsername();
     }
 
+    #[Groups(['authored:read'])]
+    public function getAuthorJobLabel(): ?string
+    {
+        return $this->author?->getJobLabel();
+    }
+
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;

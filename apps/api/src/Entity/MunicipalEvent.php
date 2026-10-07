@@ -64,6 +64,13 @@ class MunicipalEvent implements AuthoredEntity
     #[Assert\Length(max: 180, maxMessage: 'Le lieu ne peut dépasser {{ limit }} caractères.')]
     private ?string $location = null;
 
+    /**
+     * Public path under public/uploads. The client never chooses it.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['event:read'])]
+    private ?string $posterPath = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -125,6 +132,18 @@ class MunicipalEvent implements AuthoredEntity
     public function setLocation(?string $location): self
     {
         $this->location = $location;
+
+        return $this;
+    }
+
+    public function getPosterPath(): ?string
+    {
+        return $this->posterPath;
+    }
+
+    public function setPosterPath(?string $posterPath): self
+    {
+        $this->posterPath = $posterPath;
 
         return $this;
     }

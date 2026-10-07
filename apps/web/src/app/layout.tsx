@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Rye } from "next/font/google";
 
+import { AuthGate } from "@/components/auth-gate";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { AuthProvider } from "@/lib/auth-context";
@@ -41,7 +42,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <AuthProvider>
           <SiteHeader />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">{children}</main>
+          <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-12">
+            <AuthGate>{children}</AuthGate>
+          </main>
           <SiteFooter />
         </AuthProvider>
       </body>
