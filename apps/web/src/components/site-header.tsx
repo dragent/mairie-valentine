@@ -24,7 +24,7 @@ export function SiteHeader() {
   const mairieLinks = MAIRIE_LINKS.filter((link) => hasRole(link.role));
 
   return (
-    <header className="border-b border-line bg-surface">
+    <header className="border-b border-line bg-surface print:hidden">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4">
         <Link href="/" className="font-display text-xl text-heading">
           Mairie de Valentine
