@@ -30,7 +30,8 @@ function decree(
   reference: string,
   title: string,
   status: DecreeStatus,
-  publishedAt: string | null,
+  startsAt: string | null,
+  endsAt: string | null = startsAt,
 ): Decree {
   return {
     id,
@@ -38,9 +39,10 @@ function decree(
     title,
     body: "Texte",
     status,
-    publishedAt,
-    createdAt: publishedAt ?? at(2026, 9, 1, 8),
-    updatedAt: publishedAt ?? at(2026, 9, 1, 8),
+    startsAt,
+    endsAt,
+    createdAt: startsAt ?? at(2026, 9, 1, 8),
+    updatedAt: startsAt ?? at(2026, 9, 1, 8),
   };
 }
 
@@ -115,7 +117,22 @@ describe("month calendar", () => {
     expect(cells.find((cell) => cell.key === "2026-10-08")?.entries[0]?.time).toBe("");
   });
 
-  it("places a decree in force on its publication day, ahead of timed entries", () => {
+  it("repeats a published decree on every day from its start through its end", () => {
+    const cells = buildMonth(
+      2026,
+      9,
+      [],
+      [],
+      [decree(6, "DEC-2026-004", "Foire", "published", at(2026, 9, 7, 0), at(2026, 9, 9, 0))],
+    );
+    const labels = ["2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"].map(
+      (key) => cells.find((cell) => cell.key === key)?.entries.map((entry) => entry.label) ?? [],
+    );
+
+    expect(labels).toEqual([["Foire"], ["Foire"], ["Foire"], []]);
+  });
+
+  it("places a decree in force ahead of timed entries", () => {
     const cells = buildMonth(
       2026,
       9,

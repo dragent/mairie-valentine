@@ -67,6 +67,21 @@ final class EventPosterStoreTest extends TestCase
         }
     }
 
+    public function testADecreePosterIsKeptApartFromEventPosters(): void
+    {
+        $store = new EventPosterStore($this->directory, 'decrees');
+        $stored = $store->store($this->png());
+        $file = $this->directory.'/'.basename($stored);
+
+        self::assertMatchesRegularExpression('#\Auploads/decrees/[a-f0-9]{32}\.png\z#', $stored);
+
+        $store->delete('uploads/events/'.basename($stored));
+        self::assertFileExists($file);
+
+        $store->delete($stored);
+        self::assertFileDoesNotExist($file);
+    }
+
     public function testDeleteRemovesOnlyAPosterThisStoreWrote(): void
     {
         $store = $this->store();
