@@ -36,3 +36,63 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  z-index: 0;
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: min(440px, 62vw);
+  height: min(440px, 62vw);
+  transform: translate(-50%, -50%);
+  background-image: url("/sceau-mairie.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: sepia(0.85) saturate(0.35) contrast(1.08) brightness(0.32);
+}
+
+@media (min-width: 768px) {
+  body::before {
+    width: min(640px, 78vh);
+    height: min(640px, 78vh);
+  }
+}
+
+body::after {
+  z-index: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(23, 19, 16, 0.62) 0%,
+    rgba(23, 19, 16, 0.34) 160px,
+    transparent 320px
+  );
+}
+
+main :is(h1, h2, h3, p, li, dt, dd) {
+  text-shadow:
+    0 0 2px #171310,
+    0 1px 2px #171310,
+    0 0 14px #171310;
+}
+
+main .bg-surface :is(h1, h2, h3, p, li, dt, dd) {
+  text-shadow: none;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+body > header {
+  z-index: 30;
+}
