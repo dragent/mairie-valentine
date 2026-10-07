@@ -8,14 +8,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ROLE_ELU, ROLE_SECRETAIRE, discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
-/**
- * Links without `role` are shown when signed in; `role` restricts staff links.
- */
-const NAV_LINKS = [
-  { href: "/", label: "Accueil" },
-  { href: "/compte", label: "Mon espace" },
-  { href: "/personnel", label: "Personnel", role: ROLE_ELU },
-];
+/** Staff links, each limited to the given role. */
+const NAV_LINKS = [{ href: "/personnel", label: "Personnel", role: ROLE_ELU }];
 
 const MAIRIE_LINKS = [
   { href: "/mairie/calendrier", label: "Calendrier", role: ROLE_SECRETAIRE },
@@ -26,13 +20,7 @@ const MAIRIE_LINKS = [
 
 export function SiteHeader() {
   const { user, isLoading, signOut, hasRole } = useAuth();
-  const links = NAV_LINKS.filter((link) => {
-    if (link.role !== undefined) {
-      return hasRole(link.role);
-    }
-
-    return user !== null;
-  });
+  const links = NAV_LINKS.filter((link) => hasRole(link.role));
   const mairieLinks = MAIRIE_LINKS.filter((link) => hasRole(link.role));
 
   return (
