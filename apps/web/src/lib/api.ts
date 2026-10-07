@@ -141,6 +141,7 @@ export type MunicipalEvent = Authored & {
   startsAt: string;
   endsAt?: string | null;
   location?: string | null;
+  posterPath?: string | null;
 };
 
 export type MunicipalEventInput = {
@@ -224,6 +225,17 @@ function resource<TRead, TWrite>(path: string): Resource<TRead, TWrite> {
 
 export const appointments = resource<Appointment, AppointmentInput>("/api/appointments");
 export const municipalEvents = resource<MunicipalEvent, MunicipalEventInput>("/api/municipal_events");
+
+export function uploadEventPoster(token: string, id: number, file: File): Promise<MunicipalEvent> {
+  const body = new FormData();
+  body.append("poster", file);
+
+  return apiFetch<MunicipalEvent>(`/api/municipal_events/${id}/poster`, {
+    token,
+    method: "POST",
+    body,
+  });
+}
 export const notes = resource<Note, NoteInput>("/api/notes");
 export const decrees = resource<Decree, DecreeInput>("/api/decrees");
 
