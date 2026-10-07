@@ -13,11 +13,11 @@ export default function AccountPage() {
   if (!user) {
     return (
       <div className="space-y-4">
-        <h1 className="font-display text-2xl text-primary">Mon espace</h1>
+        <h1 className="font-display text-2xl text-heading">Mon espace</h1>
         <p className="text-muted">Cet espace est réservé aux citoyens enregistrés.</p>
         <a
           href={discordLoginUrl}
-          className="inline-block rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-accent"
+          className="inline-block rounded-md border border-gold-dark bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-accent"
         >
           Se connecter avec Discord
         </a>
@@ -27,7 +27,7 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-2xl text-primary">
+      <h1 className="font-display text-2xl text-heading">
         Bonjour {user.displayName ?? user.username}
       </h1>
 
@@ -41,8 +41,8 @@ export default function AccountPage() {
           <dd className="text-sm">{user.email ?? "non communiquée"}</dd>
         </div>
         <div>
-          <dt className="text-sm text-muted">Fonctions</dt>
-          <dd className="text-sm">{user.roles.join(", ")}</dd>
+          <dt className="text-sm text-muted">Fonction</dt>
+          <dd className="text-sm">{user.jobLabel ?? "Citoyen de Valentine"}</dd>
         </div>
         <div>
           <dt className="text-sm text-muted">Dernière connexion</dt>

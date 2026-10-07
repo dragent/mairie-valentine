@@ -47,14 +47,40 @@ Sur https://discord.com/developers/applications, onglet *OAuth2* :
 3. Optionnel : renseigner `DISCORD_GUILD_ID` pour n'autoriser que les membres du
    serveur Discord de la ville.
 
+### Bot Discord
+
+Les fonctions à la mairie sont lues sur les rôles Discord, et réécrites là-bas
+quand le maire promeut quelqu'un : il faut donc un bot.
+
+1. Onglet *Bot* de l'application : créer le bot, copier son jeton dans
+   `DISCORD_BOT_TOKEN`, activer l'intent privilégié *Server Members Intent*,
+   puis l'inviter sur le serveur avec la permission *Gérer les rôles*. Sans
+   cet intent, le maire ne peut pas lister les membres du serveur.
+2. Dans les paramètres du serveur, placer le rôle du bot **au-dessus** de ceux
+   de maire, adjoint et secrétaire : Discord refuse toute modification d'un rôle
+   situé plus haut que le sien, et les promotions échoueraient.
+3. Activer le mode développeur sur Discord, puis clic droit sur chaque rôle →
+   *Copier l'identifiant*, et le reporter dans `DISCORD_ROLE_MAIRE`,
+   `DISCORD_ROLE_ADJOINT` et `DISCORD_ROLE_SECRETAIRE`.
+
+Tant que `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` ou l'un des trois identifiants
+de rôle est vide, la synchronisation est désactivée : la colonne `users.job` se
+gère alors uniquement depuis le panel ou en base.
+
 ## Organisation
 
 ```
 apps/api            Symfony : API Platform, Doctrine, sécurité JWT
   src/Controller    /auth/discord, /api/me, /health
-  src/Entity        User (compte adossé à un compte Discord)
+  src/Dto           Charges utiles qui ne sont pas des entités
+  src/Entity        User, Appointment, MunicipalEvent, Note, Decree
+  src/Enum          Job et les statuts des ressources
   src/Security      Provisioning du compte et appels à l'API Discord
+  src/Service       JobAssigner (promotions)
+  src/State         Processeurs API Platform (auteur, promotion)
 apps/web            Next.js : pages, composants, client HTTP
+  src/app/mairie    Espace de travail : RDV, événements, notes, décrets, personnel
+  src/app/personnel Recrutement et nominations
   src/lib/api.ts    Client fetch typé, résolution de l'URL de l'API
   src/lib/auth-*    Contexte d'authentification (JWT en localStorage)
 docker/             Images PHP-FPM, nginx et Node
@@ -67,20 +93,56 @@ compose.prod.yaml   Surcouche de production (sources dans les images)
 1. Le front envoie l'utilisateur sur `GET /auth/discord`.
 2. Symfony le redirige vers Discord (scopes `identify`, `email`, `guilds`).
 3. Discord revient sur `GET /auth/discord/check` : le compte local est créé ou
-   mis à jour, puis un JWT est émis.
+   mis à jour — sa fonction y compris, relue sur les rôles du serveur — puis un
+   JWT est émis.
 4. L'utilisateur est renvoyé sur `/auth/callback#token=…`. Le fragment n'est
    jamais transmis au serveur, donc le jeton n'apparaît dans aucun log d'accès.
 5. Le front stocke le jeton et appelle `GET /api/me` avec
    `Authorization: Bearer <token>`.
 
-## Rôles
+## Fonctions et rôles
+
+Trois fonctions se partagent la mairie, stockées dans `users.job` :
+
+| Fonction       | Rôle accordé      | Accès                                                  |
+| -------------- | ----------------- | ------------------------------------------------------ |
+| Secrétaire     | `ROLE_SECRETAIRE` | Accès à l'espace de travail                            |
+| Maire adjoint  | `ROLE_ELU`        | Idem, plus le recrutement des secrétaires              |
+| Maire          | `ROLE_MAIRE`      | Idem, plus la nomination des adjoints et la cession    |
 
 Hiérarchie définie dans `apps/api/config/packages/security.yaml` :
 
-`ROLE_USER` → `ROLE_AGENT` → `ROLE_ADJOINT` → `ROLE_MAIRE` → `ROLE_ADMIN`
+`ROLE_USER` → `ROLE_SECRETAIRE` → `ROLE_ELU` → `ROLE_MAIRE` → `ROLE_ADMIN`
 
-Tout nouveau compte obtient `ROLE_USER`. Les autres rôles s'attribuent en base
-(colonne `users.roles`).
+Le maire et son adjoint ont les mêmes droits métier, portés par `ROLE_ELU`.
+L'adjoint recrute les secrétaires ; `ROLE_MAIRE` réserve la nomination des
+adjoints et la cession de la place.
+
+La fonction est déduite des rôles Discord à chaque connexion. Depuis
+`/personnel`, l'adjoint recrute les secrétaires parmi les membres du
+serveur — y compris ceux qui n'ont pas encore ouvert le portail. Le maire y
+nomme aussi les adjoints, ou cède sa place : le successeur devient l'unique
+maire et l'ancien redevient citoyen. L'API accorde le nouveau rôle Discord et
+retire l'ancien, et n'enregistre rien si Discord refuse.
+
+`ROLE_ADMIN`, qu'aucune fonction n'accorde, reste attribuable à la main dans la
+colonne `users.roles`.
+
+## Espace de travail
+
+Sous `/mairie`, chaque page est adossée à une collection API Platform, dont le
+contrôle d'accès est porté par l'entité :
+
+| Page                 | Ressource               | Rôle exigé        |
+| -------------------- | ----------------------- | ----------------- |
+| `/mairie/rendez-vous`| `/api/appointments`     | `ROLE_SECRETAIRE` |
+| `/mairie/evenements` | `/api/municipal_events` | `ROLE_SECRETAIRE` |
+| `/mairie/notes`      | `/api/notes`            | `ROLE_SECRETAIRE` |
+| `/mairie/decrets`    | `/api/decrees`          | `ROLE_ELU`        |
+| `/mairie/personnel`  | `/api/users`            | `ROLE_MAIRE`      |
+
+L'auteur et les dates sont posés par l'API, jamais par le client, et la
+référence d'un décret (`DEC-2026-001`) est attribuée à l'enregistrement.
 
 ## Commandes utiles
 
