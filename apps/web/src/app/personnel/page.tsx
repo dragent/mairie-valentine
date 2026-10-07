@@ -16,6 +16,7 @@ import {
   type Job,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { formatDateTime } from "@/lib/dates";
 import {
   CITIZEN_VALUE,
   OFFICES,
@@ -23,10 +24,12 @@ import {
   cessionHint,
   cessionWarning,
   filterMembers,
+  lastVisitText,
   memberName,
   officeChoices,
   showMemberSearch,
   staffLead,
+  withLastVisits,
 } from "@/lib/personnel";
 import { describe } from "@/lib/use-resource";
 
@@ -39,6 +42,7 @@ export default function StaffPage() {
   const [isBusy, setIsBusy] = useState(false);
   const [successorId, setSuccessorId] = useState("");
   const [query, setQuery] = useState("");
+  const [visits, setVisits] = useState<{ discordId: string; lastLoginAt?: string | null }[]>([]);
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
@@ -64,6 +68,10 @@ export default function StaffPage() {
     // instead of waiting for a failure before starting the second request.
     localStaff
       .then((loaded) => {
+        if (!cancelled) {
+          setVisits(loaded.map((member) => ({ discordId: member.discordId, lastLoginAt: member.lastLoginAt })));
+        }
+
         if (!cancelled && !guildLoaded) {
           setMembers(loaded);
         }
@@ -153,7 +161,7 @@ export default function StaffPage() {
   }
 
   const candidates = members?.filter((member) => member.discordId !== user?.discordId) ?? [];
-  const listed = filterMembers(members ?? [], query);
+  const listed = withLastVisits(filterMembers(members ?? [], query), visits);
   const needle = query.trim();
   const signatory = user?.displayName ?? user?.username;
   const signature = user?.jobLabel && signatory ? `${user.jobLabel} — ${signatory}` : signatory;
@@ -261,6 +269,9 @@ export default function StaffPage() {
                                         {member.username}
                                       </span>
                                     )}
+                                    <span className="block truncate text-xs text-muted">
+                                      {lastVisitText(member.lastLoginAt, formatDateTime)}
+                                    </span>
                                   </span>
                                 </span>
 
