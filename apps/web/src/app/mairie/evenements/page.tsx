@@ -189,6 +189,7 @@ export default function EventsPage() {
                 value={form.endsAt}
                 onChange={(event) => setForm({ ...form, endsAt: event.target.value })}
               />
+              <span className="text-xs text-muted">Sans date de fin, l&apos;événement tient sur un seul jour.</span>
             </Field>
 
             <Field label="Lieu" wide>

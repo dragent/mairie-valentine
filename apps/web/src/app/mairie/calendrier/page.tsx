@@ -1,28 +1,29 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CalendarSheetDialog } from "@/components/calendar-sheet";
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner } from "@/components/resource-table";
 import { ROLE_ELU, ROLE_SECRETAIRE, appointments, decrees, municipalEvents, type Decree } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { buildMonth, countByKind, filterByKind, townToday, type CalendarEntry } from "@/lib/calendar";
+import { calendarSheet } from "@/lib/calendar-sheet";
+import { buildMonth, countByKind, filterByKind, townLayoutYear, townToday, type CalendarEntry } from "@/lib/calendar";
 import { describe, useResource } from "@/lib/use-resource";
 
 const WEEKDAYS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
 
 const ENTRY_KIND: Record<CalendarEntry["kind"], { label: string; filter: string; tone: string }> = {
+  decree: { label: "Décret en cours", filter: "Décrets en cours", tone: "text-primary" },
   event: { label: "Événement", filter: "Événements", tone: "text-foreground" },
   appointment: { label: "Rendez-vous", filter: "Rendez-vous", tone: "text-accent" },
-  decree: { label: "Décret en cours", filter: "Décrets en cours", tone: "text-primary" },
 };
 
 const ALL_KINDS_ON: Record<CalendarEntry["kind"], boolean> = {
+  decree: true,
   event: true,
   appointment: true,
-  decree: true,
 };
 
 export default function CalendarPage() {
@@ -38,6 +39,7 @@ export default function CalendarPage() {
     return new Date(current.getFullYear(), current.getMonth(), 1);
   });
   const [shown, setShown] = useState(ALL_KINDS_ON);
+  const [opened, setOpened] = useState<CalendarEntry | null>(null);
   const kinds = (Object.keys(ENTRY_KIND) as CalendarEntry["kind"][]).filter(
     (kind) => kind !== "decree" || canSeeDecrees,
   );
@@ -52,14 +54,16 @@ export default function CalendarPage() {
     events.items ?? [],
     meetings.items ?? [],
     register.items ?? [],
+    townLayoutYear(cursor.getFullYear()),
   );
   const cells = filterByKind(month, shown);
   const counts = countByKind(month);
+  const sheet = opened === null ? null : calendarSheet(opened, events.items ?? [], meetings.items ?? [], register.items ?? []);
   const message =
     [events.error, meetings.error, register.error].filter((error) => error !== null).join(" ") || null;
   const title = cursor.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   const lead = canSeeDecrees
-    ? "Événements municipaux, rendez-vous du guichet et décrets en cours, sur le mois."
+    ? "Décrets en cours, événements municipaux et rendez-vous du guichet, sur le mois."
     : "Événements municipaux et rendez-vous du guichet, sur le mois.";
   const signatory = user?.displayName ?? user?.username;
   const signature = user?.jobLabel && signatory ? `${user.jobLabel} — ${signatory}` : signatory;
@@ -147,7 +151,7 @@ export default function CalendarPage() {
                         <ul className="mt-1 space-y-1">
                           {cell.entries.map((entry) => (
                             <li key={entry.id}>
-                              <EntryLink entry={entry} />
+                              <EntryLink entry={entry} onOpen={() => setOpened(entry)} />
                             </li>
                           ))}
                         </ul>
@@ -186,6 +190,15 @@ export default function CalendarPage() {
           </aside>
         </div>
       </section>
+      <CalendarSheetDialog
+        sheet={sheet}
+        onClose={() => setOpened(null)}
+        onChanged={() => {
+          events.reload();
+          meetings.reload();
+          register.reload();
+        }}
+      />
     </RequireRole>
   );
 }
@@ -200,23 +213,25 @@ function Ornament() {
   );
 }
 
-function EntryLink({ entry }: { entry: CalendarEntry }) {
+function EntryLink({ entry, onOpen }: { entry: CalendarEntry; onOpen: () => void }) {
   const kind = ENTRY_KIND[entry.kind];
 
   return (
-    <Link
-      href={entry.href}
+    <button
+      type="button"
       title={kind.label}
-      className={`block text-xs leading-snug hover:underline ${entry.muted ? "text-muted line-through" : kind.tone}`}
+      onClick={onOpen}
+      className={`block text-left text-xs leading-snug hover:underline ${entry.muted ? "text-muted line-through" : kind.tone}`}
     >
       {entry.time !== "" && <span className="text-muted">{entry.time} </span>}
       {entry.label}
-    </Link>
+    </button>
   );
 }
 
-function useDecrees(enabled: boolean): { items: Decree[] | null; error: string | null } {
+function useDecrees(enabled: boolean): { items: Decree[] | null; error: string | null; reload: () => void } {
   const { token } = useAuth();
+  const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{ items: Decree[] | null; error: string | null }>({
     items: null,
     error: null,
@@ -245,13 +260,15 @@ function useDecrees(enabled: boolean): { items: Decree[] | null; error: string |
     return () => {
       cancelled = true;
     };
-  }, [enabled, token]);
+  }, [enabled, token, revision]);
+
+  const reload = () => setRevision((current) => current + 1);
 
   if (!enabled) {
-    return { items: [], error: null };
+    return { items: [], error: null, reload };
   }
 
-  return state;
+  return { ...state, reload };
 }
 
 function sameDay(left: Date, right: Date): boolean {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Appointment, Decree, DecreeStatus, MunicipalEvent } from "@/lib/api";
-import { buildMonth, countByKind, filterByKind, townToday } from "@/lib/calendar";
+import { buildMonth, countByKind, filterByKind, townLayoutYear, townToday } from "@/lib/calendar";
 
 function at(year: number, monthIndex: number, day: number, hours: number, minutes = 0): string {
   return new Date(year, monthIndex, day, hours, minutes).toISOString();
@@ -78,18 +78,32 @@ describe("month calendar", () => {
     expect(cells.at(-1)?.date.getDay()).toBe(0);
   });
 
-  it("lists an event and a rendez-vous on their local day, earliest first", () => {
+  it("lists an event ahead of a rendez-vous, earliest first within the same kind", () => {
     const cells = buildMonth(
       2026,
       9,
-      [event(1, "Conseil", at(2026, 9, 7, 16))],
-      [appointment(2, "Permis", at(2026, 9, 7, 9, 30))],
+      [event(1, "Conseil", at(2026, 9, 7, 16)), event(9, "Audience", at(2026, 9, 7, 10))],
+      [appointment(2, "Permis", at(2026, 9, 7, 9, 30)), appointment(3, "Cadastre", at(2026, 9, 7, 15))],
     );
     const day = cells.find((cell) => cell.key === "2026-10-07");
 
-    expect(day?.entries.map((entry) => entry.label)).toEqual(["Permis", "Conseil"]);
-    expect(day?.entries.map((entry) => entry.time)).toEqual(["09:30", "16:00"]);
-    expect(day?.entries.map((entry) => entry.href)).toEqual(["/mairie/rendez-vous", "/mairie/evenements"]);
+    expect(day?.entries.map((entry) => entry.label)).toEqual(["Audience", "Conseil", "Permis", "Cadastre"]);
+    expect(day?.entries.map((entry) => entry.time)).toEqual(["10:00", "16:00", "09:30", "15:00"]);
+    expect(day?.entries.map((entry) => entry.href)).toEqual([
+      "/mairie/evenements",
+      "/mairie/evenements",
+      "/mairie/rendez-vous",
+      "/mairie/rendez-vous",
+    ]);
+  });
+
+  it("keeps an event with only a start on that single day", () => {
+    const cells = buildMonth(2026, 9, [event(1, "Conseil", at(2026, 9, 7, 16))], []);
+    const labels = ["2026-10-07", "2026-10-08"].map(
+      (key) => cells.find((cell) => cell.key === key)?.entries.map((entry) => entry.label) ?? [],
+    );
+
+    expect(labels).toEqual([["Conseil"], []]);
   });
 
   it("keeps a cancelled rendez-vous on the day, marked aside", () => {
@@ -142,7 +156,7 @@ describe("month calendar", () => {
     );
     const day = cells.find((cell) => cell.key === "2026-10-07");
 
-    expect(day?.entries.map((entry) => entry.label)).toEqual(["Foire", "Permis", "Conseil"]);
+    expect(day?.entries.map((entry) => entry.label)).toEqual(["Foire", "Conseil", "Permis"]);
     expect(day?.entries[0]).toMatchObject({
       kind: "decree",
       time: "",
@@ -173,7 +187,7 @@ describe("month calendar", () => {
         .find((cell) => cell.key === "2026-10-07")
         ?.entries.map((entry) => entry.label);
 
-    expect(labels({ event: true, appointment: true, decree: true })).toEqual(["Foire", "Permis", "Conseil"]);
+    expect(labels({ event: true, appointment: true, decree: true })).toEqual(["Foire", "Conseil", "Permis"]);
     expect(labels({ event: true, appointment: false, decree: true })).toEqual(["Foire", "Conseil"]);
   });
 
@@ -200,6 +214,35 @@ describe("month calendar", () => {
 
   it("keeps today's month and day, and sets the year to 1889", () => {
     expect(townToday(new Date(2026, 9, 7, 15, 30))).toEqual(new Date(1889, 9, 7));
+  });
+
+  it("lines the town year up with the real year", () => {
+    expect(townLayoutYear(1889, new Date(2026, 9, 7))).toBe(2026);
+  });
+
+  it("keeps Wednesday 7 October 2026 on Wednesday 7 October 1889", () => {
+    const cells = buildMonth(
+      1889,
+      9,
+      [event(1, "Conseil", at(2026, 9, 7, 16))],
+      [appointment(2, "Permis", at(2026, 9, 7, 9, 30))],
+      [decree(6, "DEC-2026-004", "Foire", "published", at(2026, 9, 7, 14))],
+      2026,
+    );
+    const index = cells.findIndex((cell) => cell.key === "1889-10-07");
+
+    expect(cells[0]).toMatchObject({ key: "1889-09-28", inMonth: false });
+    expect(index % 7).toBe(2);
+    expect(cells[index]?.entries.map((entry) => entry.label)).toEqual(["Foire", "Conseil", "Permis"]);
+    expect(cells.find((cell) => cell.key === "2026-10-07")).toBeUndefined();
+  });
+
+  it("keeps an entry already dated 1889 on that same Wednesday", () => {
+    const cells = buildMonth(1889, 9, [event(1, "Conseil", at(1889, 9, 7, 16))], [], [], 2026);
+    const index = cells.findIndex((cell) => cell.key === "1889-10-07");
+
+    expect(index % 7).toBe(2);
+    expect(cells[index]?.entries.map((entry) => entry.label)).toEqual(["Conseil"]);
   });
 
   it("drops an entry that falls outside the visible weeks", () => {
