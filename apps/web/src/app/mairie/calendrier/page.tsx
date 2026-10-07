@@ -10,6 +10,7 @@ import { ROLE_ELU, ROLE_SECRETAIRE, appointments, decrees, municipalEvents, type
 import { useAuth } from "@/lib/auth-context";
 import { calendarSheet } from "@/lib/calendar-sheet";
 import { buildMonth, countByKind, filterByKind, townLayoutYear, townToday, type CalendarEntry } from "@/lib/calendar";
+import { scheduleConflicts } from "@/lib/schedule-conflicts";
 import { describe, useResource } from "@/lib/use-resource";
 
 const WEEKDAYS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
@@ -58,6 +59,7 @@ export default function CalendarPage() {
   );
   const cells = filterByKind(month, shown);
   const counts = countByKind(month);
+  const conflicts = scheduleConflicts(meetings.items ?? [], events.items ?? []);
   const sheet = opened === null ? null : calendarSheet(opened, events.items ?? [], meetings.items ?? [], register.items ?? []);
   const message =
     [events.error, meetings.error, register.error].filter((error) => error !== null).join(" ") || null;
@@ -121,6 +123,13 @@ export default function CalendarPage() {
 
             <div className="mt-6 space-y-6">
               <ErrorBanner message={message} />
+              {conflicts.length > 0 && (
+                <ul className="space-y-2 rounded-md border border-line px-4 py-3 text-sm">
+                  {conflicts.map((conflict) => (
+                    <li key={conflict.id}>{conflict.message}</li>
+                  ))}
+                </ul>
+              )}
 
               {pending ? (
                 <p className="text-muted">Chargement…</p>
