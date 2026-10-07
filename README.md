@@ -73,12 +73,13 @@ gère alors uniquement depuis le panel ou en base.
 apps/api            Symfony : API Platform, Doctrine, sécurité JWT
   src/Controller    /auth/discord, /api/me, /health
   src/Dto           Charges utiles qui ne sont pas des entités
-  src/Entity        User (compte adossé à un compte Discord)
-  src/Enum          Job (fonction à la mairie)
+  src/Entity        User, Appointment, MunicipalEvent, Note, Decree
+  src/Enum          Job et les statuts des ressources
   src/Security      Provisioning du compte et appels à l'API Discord
   src/Service       JobAssigner (promotions)
-  src/State         Processeurs API Platform (promotion)
+  src/State         Processeurs API Platform (auteur, promotion)
 apps/web            Next.js : pages, composants, client HTTP
+  src/app/mairie    Espace de travail : RDV, événements, notes, décrets, personnel
   src/app/personnel Recrutement et nominations
   src/lib/api.ts    Client fetch typé, résolution de l'URL de l'API
   src/lib/auth-*    Contexte d'authentification (JWT en localStorage)
@@ -126,6 +127,22 @@ retire l'ancien, et n'enregistre rien si Discord refuse.
 
 `ROLE_ADMIN`, qu'aucune fonction n'accorde, reste attribuable à la main dans la
 colonne `users.roles`.
+
+## Espace de travail
+
+Sous `/mairie`, chaque page est adossée à une collection API Platform, dont le
+contrôle d'accès est porté par l'entité :
+
+| Page                 | Ressource               | Rôle exigé        |
+| -------------------- | ----------------------- | ----------------- |
+| `/mairie/rendez-vous`| `/api/appointments`     | `ROLE_SECRETAIRE` |
+| `/mairie/evenements` | `/api/municipal_events` | `ROLE_SECRETAIRE` |
+| `/mairie/notes`      | `/api/notes`            | `ROLE_SECRETAIRE` |
+| `/mairie/decrets`    | `/api/decrees`          | `ROLE_ELU`        |
+| `/mairie/personnel`  | `/api/users`            | `ROLE_MAIRE`      |
+
+L'auteur et les dates sont posés par l'API, jamais par le client, et la
+référence d'un décret (`DEC-2026-001`) est attribuée à l'enregistrement.
 
 ## Commandes utiles
 
