@@ -5,11 +5,12 @@ import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "rea
 
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner, Field, ResourceForm, TextArea, TextInput } from "@/components/resource-table";
-import { ROLE_SECRETAIRE } from "@/lib/api";
+import { ROLE_SECRETAIRE, appointments, municipalEvents } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { toApiDate } from "@/lib/dates";
 import { announceMunicipalEvent, posterRejection } from "@/lib/event-poster";
-import { describe } from "@/lib/use-resource";
+import { knownLocations } from "@/lib/known-locations";
+import { describe, useResource } from "@/lib/use-resource";
 
 const EMPTY_FORM = {
   title: "",
@@ -21,6 +22,12 @@ const EMPTY_FORM = {
 
 export default function EventsPage() {
   const { token, user } = useAuth();
+  const meetings = useResource(appointments);
+  const events = useResource(municipalEvents);
+  const places = knownLocations([
+    ...(meetings.items ?? []).map((appointment) => appointment.location),
+    ...(events.items ?? []).map((municipalEvent) => municipalEvent.location),
+  ]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [poster, setPoster] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -195,9 +202,15 @@ export default function EventsPage() {
             <Field label="Lieu" wide>
               <TextInput
                 maxLength={180}
+                list="known-locations"
                 value={form.location}
                 onChange={(event) => setForm({ ...form, location: event.target.value })}
               />
+              <datalist id="known-locations">
+                {places.map((place) => (
+                  <option key={place} value={place} />
+                ))}
+              </datalist>
             </Field>
 
             <Field label="Description" wide>
