@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Dto\JobAssignment;
 use App\Enum\Job;
 use App\Repository\UserRepository;
@@ -20,9 +21,10 @@ use Symfony\Component\Serializer\Attribute\Groups;
 /**
  * An account, always backed by a Discord one.
  *
- * The elected officials may browse the register of accounts; only the mayor may
- * hand out a position, and he does so through {@see JobAssignment} rather than
- * by writing the column directly, because the Discord roles have to follow.
+ * The elected officials may browse the register of accounts. The mayor hands
+ * out any position and the deputy mayor recruits secretaries, both through
+ * {@see JobAssignment} rather than by writing the column directly, because the
+ * Discord roles have to follow.
  */
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
@@ -31,9 +33,18 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new GetCollection(security: "is_granted('ROLE_ELU')"),
         new Get(security: "is_granted('ROLE_ELU')"),
         new Patch(
-            security: "is_granted('ROLE_MAIRE')",
+            security: "is_granted('ROLE_ELU')",
             input: JobAssignment::class,
             processor: AssignJobProcessor::class,
+        ),
+        new Post(
+            uriTemplate: '/promotions',
+            status: 200,
+            security: "is_granted('ROLE_ELU')",
+            input: JobAssignment::class,
+            output: User::class,
+            processor: AssignJobProcessor::class,
+            read: false,
         ),
     ],
     normalizationContext: ['groups' => ['user:read']],
@@ -189,20 +200,44 @@ class User implements UserInterface
 
     public function getJob(): ?Job
     {
-        return $this->job;
+        return $this->job ?? $this->positionGrantedByStoredRoles();
     }
 
     public function setJob(?Job $job): self
     {
         $this->job = $job;
+        // A hand-filled role must not resurrect a position once it is recorded
+        // or withdrawn. ROLE_ADMIN is the only extra role that stays.
+        $this->roles = array_values(array_filter(
+            $this->roles,
+            static fn (string $role): bool => !\in_array($role, [self::ROLE_MAIRE, self::ROLE_ELU, self::ROLE_SECRETAIRE], true),
+        ));
 
         return $this;
+    }
+
+    /**
+     * The position column is the register. A role kept in the extra-roles
+     * column still names a position when that column was filled in by hand
+     * and the register was left empty.
+     */
+    private function positionGrantedByStoredRoles(): ?Job
+    {
+        foreach ([Job::MAIRE, Job::ADJOINT, Job::SECRETAIRE] as $position) {
+            foreach ($position->roles() as $role) {
+                if (\in_array($role, $this->roles, true)) {
+                    return $position;
+                }
+            }
+        }
+
+        return null;
     }
 
     #[Groups(['user:read'])]
     public function getJobLabel(): ?string
     {
-        return $this->job?->label();
+        return $this->getJob()?->label();
     }
 
     public function getCreatedAt(): \DateTimeImmutable

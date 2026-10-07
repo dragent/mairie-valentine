@@ -93,6 +93,121 @@ final readonly class DiscordApi
         $this->writeMemberRole('DELETE', $guildId, $discordId, $roleId);
     }
 
+    /**
+     * @throws DiscordApiException    when Discord refuses the listing
+     * @throws HttpExceptionInterface when Discord cannot be reached
+     *
+     * @return list<GuildMember>
+     */
+    public function listGuildMembers(string $guildId): array
+    {
+        $members = [];
+        $after = '0';
+
+        for ($page = 0; $page < 10; ++$page) {
+            $path = \sprintf('/guilds/%s/members?limit=1000&after=%s', $guildId, $after);
+            $response = $this->asBot('GET', $path);
+            $status = $response->getStatusCode();
+
+            if (403 === $status) {
+                throw new DiscordApiException('Le bot n\'a pas l\'intent « Server Members » : les membres du Discord ne peuvent pas être listés.');
+            }
+
+            if (200 !== $status) {
+                throw new DiscordApiException(\sprintf('GET %s a répondu %d.', $path, $status));
+            }
+
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $response->toArray();
+            $lastId = null;
+
+            foreach ($rows as $row) {
+                if (!\is_array($row)) {
+                    continue;
+                }
+
+                $user = $row['user'] ?? null;
+
+                if (\is_array($user) && isset($user['id'])) {
+                    $lastId = (string) $user['id'];
+                }
+
+                $member = $this->mapMember($row);
+
+                if (null !== $member) {
+                    $members[] = $member;
+                }
+            }
+
+            if (\count($rows) < 1000 || null === $lastId || $lastId === $after) {
+                break;
+            }
+
+            $after = $lastId;
+        }
+
+        return $members;
+    }
+
+    /**
+     * @throws DiscordApiException    when Discord refuses the lookup
+     * @throws HttpExceptionInterface when Discord cannot be reached
+     */
+    public function fetchGuildMember(string $guildId, string $discordId): ?GuildMember
+    {
+        $path = \sprintf('/guilds/%s/members/%s', $guildId, $discordId);
+        $response = $this->asBot('GET', $path);
+        $status = $response->getStatusCode();
+
+        if (404 === $status) {
+            return null;
+        }
+
+        if (200 !== $status) {
+            throw new DiscordApiException(\sprintf('GET %s a répondu %d.', $path, $status));
+        }
+
+        $payload = $response->toArray();
+
+        return \is_array($payload) ? $this->mapMember($payload) : null;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function mapMember(array $payload): ?GuildMember
+    {
+        $user = $payload['user'] ?? null;
+
+        if (!\is_array($user) || !isset($user['id'], $user['username']) || true === ($user['bot'] ?? false)) {
+            return null;
+        }
+
+        $discordId = (string) $user['id'];
+        $avatar = isset($user['avatar']) && \is_string($user['avatar']) ? $user['avatar'] : null;
+        $roles = isset($payload['roles']) && \is_array($payload['roles']) ? $payload['roles'] : [];
+
+        return new GuildMember(
+            discordId: $discordId,
+            username: (string) $user['username'],
+            displayName: isset($user['global_name']) && \is_string($user['global_name']) ? $user['global_name'] : null,
+            nick: isset($payload['nick']) && \is_string($payload['nick']) ? $payload['nick'] : null,
+            avatarUrl: $this->avatarUrl($discordId, $avatar),
+            roleIds: array_values(array_map(strval(...), $roles)),
+        );
+    }
+
+    private function avatarUrl(string $discordId, ?string $hash): ?string
+    {
+        if (null === $hash) {
+            return null;
+        }
+
+        $extension = str_starts_with($hash, 'a_') ? 'gif' : 'png';
+
+        return \sprintf('https://cdn.discordapp.com/avatars/%s/%s.%s?size=128', $discordId, $hash, $extension);
+    }
+
     private function writeMemberRole(string $method, string $guildId, string $discordId, string $roleId): void
     {
         $path = \sprintf('/guilds/%s/members/%s/roles/%s', $guildId, $discordId, $roleId);

@@ -3,26 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ROLE_SECRETAIRE, discordLoginUrl } from "@/lib/api";
+import { ROLE_ELU, discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 /**
- * `role` restricts a link to the staff holding it; the others are public.
+ * Links without `role` are shown when signed in; `role` restricts staff links.
  */
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/compte", label: "Mon espace" },
-  { href: "/mairie", label: "Mairie", role: ROLE_SECRETAIRE },
+  { href: "/personnel", label: "Personnel", role: ROLE_ELU },
 ];
 
 export function SiteHeader() {
   const { user, isLoading, signOut, hasRole } = useAuth();
-  const links = NAV_LINKS.filter((link) => link.role === undefined || hasRole(link.role));
+  const links = NAV_LINKS.filter((link) => {
+    if (link.role !== undefined) {
+      return hasRole(link.role);
+    }
+
+    return user !== null;
+  });
 
   return (
     <header className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 px-6 py-4">
-        <Link href="/" className="font-display text-xl text-primary">
+        <Link href="/" className="font-display text-xl text-heading">
           Mairie de Valentine
         </Link>
 
@@ -54,7 +60,7 @@ export function SiteHeader() {
           ) : (
             <a
               href={discordLoginUrl}
-              className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-accent"
+              className="rounded-md border border-gold-dark bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-accent"
             >
               Se connecter avec Discord
             </a>

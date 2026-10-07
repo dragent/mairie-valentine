@@ -53,8 +53,9 @@ Les fonctions à la mairie sont lues sur les rôles Discord, et réécrites là-
 quand le maire promeut quelqu'un : il faut donc un bot.
 
 1. Onglet *Bot* de l'application : créer le bot, copier son jeton dans
-   `DISCORD_BOT_TOKEN` et l'inviter sur le serveur avec la permission
-   *Gérer les rôles*.
+   `DISCORD_BOT_TOKEN`, activer l'intent privilégié *Server Members Intent*,
+   puis l'inviter sur le serveur avec la permission *Gérer les rôles*. Sans
+   cet intent, le maire ne peut pas lister les membres du serveur.
 2. Dans les paramètres du serveur, placer le rôle du bot **au-dessus** de ceux
    de maire, adjoint et secrétaire : Discord refuse toute modification d'un rôle
    situé plus haut que le sien, et les promotions échoueraient.
@@ -79,6 +80,7 @@ apps/api            Symfony : API Platform, Doctrine, sécurité JWT
   src/State         Processeurs API Platform (auteur, promotion)
 apps/web            Next.js : pages, composants, client HTTP
   src/app/mairie    Espace de travail : RDV, événements, notes, décrets, personnel
+  src/app/personnel Recrutement et nominations
   src/lib/api.ts    Client fetch typé, résolution de l'URL de l'API
   src/lib/auth-*    Contexte d'authentification (JWT en localStorage)
 docker/             Images PHP-FPM, nginx et Node
@@ -104,19 +106,23 @@ Trois fonctions se partagent la mairie, stockées dans `users.job` :
 
 | Fonction       | Rôle accordé      | Accès                                                  |
 | -------------- | ----------------- | ------------------------------------------------------ |
-| Secrétaire     | `ROLE_SECRETAIRE` | Rendez-vous, événements, notes                         |
-| Maire adjoint  | `ROLE_ELU`        | Idem, plus les décrets                                 |
-| Maire          | `ROLE_MAIRE`      | Idem, plus l'attribution des fonctions                 |
+| Secrétaire     | `ROLE_SECRETAIRE` | Accès à l'espace de travail                            |
+| Maire adjoint  | `ROLE_ELU`        | Idem, plus le recrutement des secrétaires              |
+| Maire          | `ROLE_MAIRE`      | Idem, plus la nomination des adjoints et la cession    |
 
 Hiérarchie définie dans `apps/api/config/packages/security.yaml` :
 
 `ROLE_USER` → `ROLE_SECRETAIRE` → `ROLE_ELU` → `ROLE_MAIRE` → `ROLE_ADMIN`
 
-Le maire et son adjoint ont les mêmes droits métier, portés par `ROLE_ELU` ;
-`ROLE_MAIRE` ne sert qu'à réserver le panel de promotion au maire.
+Le maire et son adjoint ont les mêmes droits métier, portés par `ROLE_ELU`.
+L'adjoint recrute les secrétaires ; `ROLE_MAIRE` réserve la nomination des
+adjoints et la cession de la place.
 
-La fonction est déduite des rôles Discord à chaque connexion. Le maire peut la
-changer depuis `/mairie/personnel` : l'API accorde le nouveau rôle Discord et
+La fonction est déduite des rôles Discord à chaque connexion. Depuis
+`/personnel`, l'adjoint recrute les secrétaires parmi les membres du
+serveur — y compris ceux qui n'ont pas encore ouvert le portail. Le maire y
+nomme aussi les adjoints, ou cède sa place : le successeur devient l'unique
+maire et l'ancien redevient citoyen. L'API accorde le nouveau rôle Discord et
 retire l'ancien, et n'enregistre rien si Discord refuse.
 
 `ROLE_ADMIN`, qu'aucune fonction n'accorde, reste attribuable à la main dans la
