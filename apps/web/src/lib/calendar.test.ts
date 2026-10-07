@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { Appointment, MunicipalEvent } from "@/lib/api";
-import { buildMonth } from "@/lib/calendar";
+import type { Appointment, Decree, DecreeStatus, MunicipalEvent } from "@/lib/api";
+import { buildMonth, countByKind, filterByKind, townToday } from "@/lib/calendar";
 
 function at(year: number, monthIndex: number, day: number, hours: number, minutes = 0): string {
   return new Date(year, monthIndex, day, hours, minutes).toISOString();
@@ -22,6 +22,25 @@ function event(
     location: null,
     createdAt: startsAt,
     updatedAt: startsAt,
+  };
+}
+
+function decree(
+  id: number,
+  reference: string,
+  title: string,
+  status: DecreeStatus,
+  publishedAt: string | null,
+): Decree {
+  return {
+    id,
+    reference,
+    title,
+    body: "Texte",
+    status,
+    publishedAt,
+    createdAt: publishedAt ?? at(2026, 9, 1, 8),
+    updatedAt: publishedAt ?? at(2026, 9, 1, 8),
   };
 }
 
@@ -94,6 +113,76 @@ describe("month calendar", () => {
     expect(labels).toEqual([["Foire"], ["Foire"], ["Foire"]]);
     expect(cells.find((cell) => cell.key === "2026-10-07")?.entries[0]?.time).toBe("18:00");
     expect(cells.find((cell) => cell.key === "2026-10-08")?.entries[0]?.time).toBe("");
+  });
+
+  it("places a decree in force on its publication day, ahead of timed entries", () => {
+    const cells = buildMonth(
+      2026,
+      9,
+      [event(1, "Conseil", at(2026, 9, 7, 16))],
+      [appointment(2, "Permis", at(2026, 9, 7, 9, 30))],
+      [decree(6, "DEC-2026-004", "Foire", "published", at(2026, 9, 7, 14))],
+    );
+    const day = cells.find((cell) => cell.key === "2026-10-07");
+
+    expect(day?.entries.map((entry) => entry.label)).toEqual(["Foire", "Permis", "Conseil"]);
+    expect(day?.entries[0]).toMatchObject({
+      kind: "decree",
+      time: "",
+      href: "/mairie/decrets",
+      muted: false,
+    });
+  });
+
+  it("leaves drafts and repealed decrees off the month", () => {
+    const cells = buildMonth(2026, 9, [], [], [
+      decree(7, "DEC-2026-005", "Brouillon", "draft", null),
+      decree(8, "DEC-2026-006", "Abrogé", "repealed", at(2026, 9, 7, 11)),
+    ]);
+
+    expect(cells.flatMap((cell) => cell.entries)).toEqual([]);
+  });
+
+  it("keeps every kind until one is switched off", () => {
+    const cells = buildMonth(
+      2026,
+      9,
+      [event(1, "Conseil", at(2026, 9, 7, 16))],
+      [appointment(2, "Permis", at(2026, 9, 7, 9, 30))],
+      [decree(6, "DEC-2026-004", "Foire", "published", at(2026, 9, 7, 14))],
+    );
+    const labels = (shown: { event: boolean; appointment: boolean; decree: boolean }) =>
+      filterByKind(cells, shown)
+        .find((cell) => cell.key === "2026-10-07")
+        ?.entries.map((entry) => entry.label);
+
+    expect(labels({ event: true, appointment: true, decree: true })).toEqual(["Foire", "Permis", "Conseil"]);
+    expect(labels({ event: true, appointment: false, decree: true })).toEqual(["Foire", "Conseil"]);
+  });
+
+  it("counts each category once for the days inside the month", () => {
+    const cells = buildMonth(
+      1889,
+      9,
+      [
+        event(4, "Foire", at(1889, 9, 7, 18), at(1889, 9, 9, 9)),
+        event(5, "Veille", at(1889, 8, 28, 10)),
+      ],
+      [
+        appointment(2, "Permis", at(1889, 9, 7, 9, 30)),
+        appointment(3, "Annulé", at(1889, 9, 8, 11), "cancelled"),
+      ],
+      [
+        decree(6, "DEC-1889-004", "Arrêté", "published", at(1889, 9, 7, 14)),
+        decree(7, "DEC-1889-005", "Brouillon", "draft", null),
+      ],
+    );
+
+    expect(countByKind(cells)).toEqual({ event: 1, appointment: 2, decree: 1 });
+  });
+
+  it("keeps today's month and day, and sets the year to 1889", () => {
+    expect(townToday(new Date(2026, 9, 7, 15, 30))).toEqual(new Date(1889, 9, 7));
   });
 
   it("drops an entry that falls outside the visible weeks", () => {

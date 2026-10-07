@@ -10,7 +10,7 @@ const SPACES = [
   {
     href: "/mairie/calendrier",
     title: "Calendrier",
-    description: "Événements municipaux et rendez-vous du guichet, sur le mois.",
+    description: "Événements, rendez-vous et, pour les élus, les décrets en cours.",
     role: ROLE_SECRETAIRE,
   },
   {

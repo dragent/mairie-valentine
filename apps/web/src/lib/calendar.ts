@@ -1,8 +1,8 @@
-import type { Appointment, MunicipalEvent } from "@/lib/api";
+import type { Appointment, Decree, MunicipalEvent } from "@/lib/api";
 
 export type CalendarEntry = {
   id: string;
-  kind: "event" | "appointment";
+  kind: "event" | "appointment" | "decree";
   label: string;
   time: string;
   href: string;
@@ -17,13 +17,53 @@ export type CalendarCell = {
   entries: CalendarEntry[];
 };
 
+export type CalendarKind = CalendarEntry["kind"];
+
+const TOWN_YEAR = 1889;
+
+export function townToday(now = new Date()): Date {
+  return new Date(TOWN_YEAR, now.getMonth(), now.getDate());
+}
+
 type Placed = CalendarEntry & { sort: number };
+
+export function countByKind(cells: CalendarCell[]): Record<CalendarKind, number> {
+  const seen = new Set<string>();
+  const counts: Record<CalendarKind, number> = { event: 0, appointment: 0, decree: 0 };
+
+  for (const cell of cells) {
+    if (!cell.inMonth) {
+      continue;
+    }
+
+    for (const entry of cell.entries) {
+      const source = entry.id.replace(/-\d{4}-\d{2}-\d{2}$/, "");
+
+      if (seen.has(source)) {
+        continue;
+      }
+
+      seen.add(source);
+      counts[entry.kind] += 1;
+    }
+  }
+
+  return counts;
+}
+
+export function filterByKind(cells: CalendarCell[], shown: Record<CalendarKind, boolean>): CalendarCell[] {
+  return cells.map((cell) => ({
+    ...cell,
+    entries: cell.entries.filter((entry) => shown[entry.kind]),
+  }));
+}
 
 export function buildMonth(
   year: number,
   monthIndex: number,
   events: MunicipalEvent[],
   appointments: Appointment[],
+  decrees: Decree[] = [],
 ): CalendarCell[] {
   const cells = visibleDays(year, monthIndex);
   const byDay = new Map<string, Placed[]>();
@@ -49,6 +89,22 @@ export function buildMonth(
       href: "/mairie/rendez-vous",
       muted: appointment.status === "cancelled",
       sort: minutes(appointment.scheduledAt),
+    }));
+  }
+
+  for (const decree of decrees) {
+    if (decree.status !== "published" || !decree.publishedAt) {
+      continue;
+    }
+
+    place(byDay, spanKeys(decree.publishedAt, null), (key) => ({
+      id: `decree-${decree.id}-${key}`,
+      kind: "decree",
+      label: decree.title,
+      time: "",
+      href: "/mairie/decrets",
+      muted: false,
+      sort: 0,
     }));
   }
 
