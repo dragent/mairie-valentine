@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 
+import { PublicNotices } from "@/components/public-notices";
 import { StaffNotes } from "@/components/staff-notes";
 import { ROLE_SECRETAIRE } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -15,7 +16,12 @@ export default function HomePage() {
   }
 
   if (!user) {
-    return <SealedBinder />;
+    return (
+      <div className="space-y-10">
+        <SealedBinder />
+        <PublicNotices />
+      </div>
+    );
   }
 
   return (
@@ -23,10 +29,15 @@ export default function HomePage() {
       {hasRole(ROLE_SECRETAIRE) ? (
         <StaffNotes />
       ) : (
-        <p className="text-muted">
-          Les notes du maire, des adjoints et des secrétaires sont réservées au personnel de la
-          mairie.
-        </p>
+        <>
+          <p className="text-muted">
+            Les notes du maire, des adjoints et des secrétaires sont réservées au personnel de la
+            mairie.
+          </p>
+          <div className="mt-10">
+            <PublicNotices />
+          </div>
+        </>
       )}
     </OpenBinder>
   );
@@ -108,3 +119,4 @@ function Ornament() {
     </div>
   );
 }
+

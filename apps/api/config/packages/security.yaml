@@ -27,6 +27,7 @@ security:
         - { path: ^/auth/discord, roles: PUBLIC_ACCESS }
         - { path: ^/api/(docs|contexts|\.well-known), roles: PUBLIC_ACCESS }
         - { path: ^/api$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/public, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
     # The mayor and his deputy share ROLE_ELU. The deputy may recruit
