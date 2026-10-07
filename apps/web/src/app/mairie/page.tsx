@@ -8,6 +8,12 @@ import { useAuth } from "@/lib/auth-context";
 
 const SPACES = [
   {
+    href: "/mairie/calendrier",
+    title: "Calendrier",
+    description: "Événements municipaux et rendez-vous du guichet, sur le mois.",
+    role: ROLE_SECRETAIRE,
+  },
+  {
     href: "/mairie/rendez-vous",
     title: "Rendez-vous",
     description: "Tenue du registre des rendez-vous pris au guichet.",
