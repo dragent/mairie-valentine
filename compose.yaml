@@ -63,12 +63,15 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    entrypoint: ["/bin/sh", "/wait-for-api.sh"]
+    command: ["nginx", "-g", "daemon off;"]
     ports:
       - "${API_PORT:-8080}:80"
     volumes:
       - ./apps/api/public:/var/www/html/public:ro
       - ./docker/nginx/upstream.conf:/etc/nginx/conf.d/00-upstream.conf:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/wait-for-api.sh:/wait-for-api.sh:ro
     restart: unless-stopped
 
   web:

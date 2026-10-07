@@ -28,7 +28,7 @@ export function SiteHeader() {
   return (
     <header className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 px-6 py-4">
-        <Link href="/" className="font-display text-xl text-primary">
+        <Link href="/" className="font-display text-xl text-heading">
           Mairie de Valentine
         </Link>
 
@@ -60,7 +60,7 @@ export function SiteHeader() {
           ) : (
             <a
               href={discordLoginUrl}
-              className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-accent"
+              className="rounded-md border border-gold-dark bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-accent"
             >
               Se connecter avec Discord
             </a>
