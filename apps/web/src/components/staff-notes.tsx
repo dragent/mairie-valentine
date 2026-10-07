@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import {
@@ -10,17 +11,33 @@ import {
   TextArea,
   TextInput,
 } from "@/components/resource-table";
-import { notes, type Note } from "@/lib/api";
+import { ROLE_ELU, appointments, decrees, notes, type Decree, type Note } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { formatDateTime } from "@/lib/dates";
+import { noteMentions } from "@/lib/note-links";
 import { noteByline, splitNotes } from "@/lib/notes";
 import { useResource } from "@/lib/use-resource";
 
 const EMPTY_FORM = { title: "", body: "" };
 
 export function StaffNotes() {
+  const { hasRole } = useAuth();
+
+  return hasRole(ROLE_ELU) ? <NotesWithDecrees /> : <NotesDesk decrees={[]} />;
+}
+
+function NotesWithDecrees() {
+  const register = useResource(decrees);
+
+  return <NotesDesk decrees={register.items ?? []} />;
+}
+
+function NotesDesk({ decrees: register }: { decrees: Pick<Decree, "reference">[] }) {
   const { items, error, isBusy, create, update } = useResource(notes);
+  const meetings = useResource(appointments);
   const [form, setForm] = useState(EMPTY_FORM);
   const { current, archived } = splitNotes(items ?? []);
+  const citizens = [...new Set((meetings.items ?? []).map((appointment) => appointment.citizenName))];
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,6 +59,8 @@ export function StaffNotes() {
           actionLabel="Archiver"
           onAction={(note) => void update(note.id, { status: "archived" })}
           isBusy={isBusy}
+          decrees={register}
+          citizens={citizens}
         />
 
         <ResourceForm
@@ -93,6 +112,8 @@ function NoteFolio({
   actionLabel,
   onAction,
   isBusy,
+  decrees = [],
+  citizens = [],
   archived = false,
 }: {
   title: string;
@@ -101,6 +122,8 @@ function NoteFolio({
   actionLabel: string;
   onAction: (note: Note) => void;
   isBusy: boolean;
+  decrees?: Pick<Decree, "reference">[];
+  citizens?: string[];
   archived?: boolean;
 }) {
   return (
@@ -119,6 +142,7 @@ function NoteFolio({
                 {note.title}
               </h3>
               {!archived && <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">{note.body}</p>}
+              {!archived && <Mentions body={note.body} decrees={decrees} citizens={citizens} />}
               <p className="mt-3 text-xs tracking-wide text-muted">
                 {noteByline(note)}
                 <span className="mx-2">·</span>
@@ -132,5 +156,31 @@ function NoteFolio({
         </ul>
       )}
     </div>
+  );
+}
+
+function Mentions({
+  body,
+  decrees,
+  citizens,
+}: {
+  body: string;
+  decrees: Pick<Decree, "reference">[];
+  citizens: string[];
+}) {
+  const mentions = noteMentions(body, { decrees, citizens });
+
+  if (mentions.length === 0) {
+    return null;
+  }
+
+  return (
+    <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+      {mentions.map((mention) => (
+        <Link key={`${mention.kind}-${mention.label}`} href={mention.href} className="text-accent underline">
+          {mention.label}
+        </Link>
+      ))}
+    </p>
   );
 }
