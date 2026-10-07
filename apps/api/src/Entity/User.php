@@ -200,20 +200,44 @@ class User implements UserInterface
 
     public function getJob(): ?Job
     {
-        return $this->job;
+        return $this->job ?? $this->positionGrantedByStoredRoles();
     }
 
     public function setJob(?Job $job): self
     {
         $this->job = $job;
+        // A hand-filled role must not resurrect a position once it is recorded
+        // or withdrawn. ROLE_ADMIN is the only extra role that stays.
+        $this->roles = array_values(array_filter(
+            $this->roles,
+            static fn (string $role): bool => !\in_array($role, [self::ROLE_MAIRE, self::ROLE_ELU, self::ROLE_SECRETAIRE], true),
+        ));
 
         return $this;
+    }
+
+    /**
+     * The position column is the register. A role kept in the extra-roles
+     * column still names a position when that column was filled in by hand
+     * and the register was left empty.
+     */
+    private function positionGrantedByStoredRoles(): ?Job
+    {
+        foreach ([Job::MAIRE, Job::ADJOINT, Job::SECRETAIRE] as $position) {
+            foreach ($position->roles() as $role) {
+                if (\in_array($role, $this->roles, true)) {
+                    return $position;
+                }
+            }
+        }
+
+        return null;
     }
 
     #[Groups(['user:read'])]
     public function getJobLabel(): ?string
     {
-        return $this->job?->label();
+        return $this->getJob()?->label();
     }
 
     public function getCreatedAt(): \DateTimeImmutable

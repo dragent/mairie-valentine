@@ -1,3 +1,10 @@
+"use client";
+
+import Link from "next/link";
+
+import { ROLE_ELU } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+
 const SERVICES = [
   {
     title: "Registre des citoyens",
@@ -16,6 +23,8 @@ const SERVICES = [
 ];
 
 export default function HomePage() {
+  const { hasRole } = useAuth();
+
   return (
     <div className="space-y-12">
       <section className="space-y-4">
@@ -27,6 +36,17 @@ export default function HomePage() {
       </section>
 
       <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {hasRole(ROLE_ELU) && (
+          <Link
+            href="/personnel"
+            className="rounded-lg border border-line bg-surface p-6 shadow-sm hover:border-accent"
+          >
+            <h2 className="font-display text-lg text-heading">Personnel</h2>
+            <p className="mt-3 text-sm text-muted">
+              Recruter les secrétaires. Le maire y nomme aussi les adjoints et peut céder sa place.
+            </p>
+          </Link>
+        )}
         {SERVICES.map((service) => (
           <article
             key={service.title}

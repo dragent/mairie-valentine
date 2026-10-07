@@ -65,6 +65,27 @@ final class JobAssignerTest extends TestCase
         self::assertSame(Job::ADJOINT, $deputy->getJob());
     }
 
+    public function testDismissingADeputyRemovesTheGuildRoleWithoutTheirApproval(): void
+    {
+        $deputy = $this->user('9', 'dep', Job::ADJOINT);
+        $deputy->setRoles([User::ROLE_ELU]);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->once())
+            ->method('request')
+            ->with('DELETE', $this->roleUrl('9', self::ADJOINT_ROLE))
+            ->willReturn($this->discordResponse(204));
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->expects($this->once())->method('flush');
+
+        $this->assigner($client, $this->createMock(UserRepository::class), $entityManager)
+            ->assign($deputy, null);
+
+        self::assertNull($deputy->getJob());
+        self::assertNotContains(User::ROLE_ELU, $deputy->getRoles());
+    }
+
     public function testTheMayorCanOnlyLeaveByCedingTheSeat(): void
     {
         $mayor = $this->user('1', 'mayor', Job::MAIRE);

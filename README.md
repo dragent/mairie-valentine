@@ -79,7 +79,7 @@ apps/api            Symfony : API Platform, Doctrine, sécurité JWT
   src/Service       JobAssigner (promotions)
   src/State         Processeurs API Platform (promotion)
 apps/web            Next.js : pages, composants, client HTTP
-  src/app/mairie    Espace de travail (personnel)
+  src/app/personnel Recrutement et nominations
   src/lib/api.ts    Client fetch typé, résolution de l'URL de l'API
   src/lib/auth-*    Contexte d'authentification (JWT en localStorage)
 docker/             Images PHP-FPM, nginx et Node
@@ -118,7 +118,7 @@ L'adjoint recrute les secrétaires ; `ROLE_MAIRE` réserve la nomination des
 adjoints et la cession de la place.
 
 La fonction est déduite des rôles Discord à chaque connexion. Depuis
-`/mairie/personnel`, l'adjoint recrute les secrétaires parmi les membres du
+`/personnel`, l'adjoint recrute les secrétaires parmi les membres du
 serveur — y compris ceux qui n'ont pas encore ouvert le portail. Le maire y
 nomme aussi les adjoints, ou cède sa place : le successeur devient l'unique
 maire et l'ancien redevient citoyen. L'API accorde le nouveau rôle Discord et

@@ -22,8 +22,9 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
- * Handles promotions. The mayor may hand out any position; a deputy mayor may
- * only recruit or dismiss a secretary. The guild roles are rewritten first, so
+ * Handles promotions. Nobody may change their own position. The mayor may hand
+ * out any other position; a deputy mayor may only recruit or dismiss a
+ * secretary. The guild roles are rewritten first, so
  * a Discord that refuses the change leaves the register untouched and answers
  * 502 rather than pretending the promotion happened.
  *
@@ -71,6 +72,12 @@ final readonly class AssignJobProcessor implements ProcessorInterface
      */
     private function assertCallerMayAssign(User $target, ?Job $job): void
     {
+        $caller = $this->security->getUser();
+
+        if ($caller instanceof User && $caller->getDiscordId() === $target->getDiscordId()) {
+            throw new AccessDeniedHttpException('Vous ne pouvez pas modifier votre propre fonction.');
+        }
+
         if ($this->security->isGranted(User::ROLE_MAIRE)) {
             return;
         }
@@ -83,6 +90,6 @@ final readonly class AssignJobProcessor implements ProcessorInterface
             return;
         }
 
-        throw new AccessDeniedHttpException('Le maire adjoint ne peut recruter que des secrétaires.');
+        throw new AccessDeniedHttpException('Le maire adjoint ne peut recruter ou retirer que des secrétaires.');
     }
 }

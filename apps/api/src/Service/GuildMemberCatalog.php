@@ -37,7 +37,7 @@ final readonly class GuildMemberCatalog
     public function list(): array
     {
         if ('' === $this->guildId || !$this->discordApi->hasBotToken()) {
-            throw new HttpException(503, 'Le Discord n\'est pas configuré : la liste des membres est indisponible.');
+            throw new HttpException(503, 'Le Discord n\'est pas configuré : seuls les comptes déjà ouverts sur le portail sont listés.');
         }
 
         try {

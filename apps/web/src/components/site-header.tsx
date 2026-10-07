@@ -3,16 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ROLE_SECRETAIRE, discordLoginUrl } from "@/lib/api";
+import { ROLE_ELU, discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 /**
- * Links without `role` are shown only when signed in; `role` restricts staff links.
+ * Links without `role` are shown when signed in; `role` restricts staff links.
  */
 const NAV_LINKS = [
   { href: "/", label: "Accueil" },
   { href: "/compte", label: "Mon espace" },
-  { href: "/mairie", label: "Mairie", role: ROLE_SECRETAIRE },
+  { href: "/personnel", label: "Personnel", role: ROLE_ELU },
 ];
 
 export function SiteHeader() {

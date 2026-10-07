@@ -8,7 +8,7 @@ const INPUT_CLASS =
 export function WorkspaceHeading({ title, lead }: { title: string; lead: string }) {
   return (
     <header className="space-y-2">
-      <h1 className="font-display text-2xl text-primary">{title}</h1>
+      <h1 className="font-display text-2xl text-heading">{title}</h1>
       <p className="max-w-2xl text-sm text-muted">{lead}</p>
     </header>
   );
@@ -85,13 +85,13 @@ export function ResourceForm({
   return (
     <form onSubmit={onSubmit} className="rounded-lg border border-line bg-surface p-6">
       <fieldset disabled={isBusy} className="space-y-4">
-        <legend className="font-display text-lg text-primary">{legend}</legend>
+        <legend className="font-display text-lg text-heading">{legend}</legend>
 
         <div className="grid gap-4 sm:grid-cols-2">{children}</div>
 
         <button
           type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-accent disabled:opacity-60"
+          className="rounded-md border border-gold-dark bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-accent disabled:opacity-60"
         >
           {submitLabel}
         </button>

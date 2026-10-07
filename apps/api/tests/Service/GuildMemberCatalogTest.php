@@ -99,7 +99,7 @@ final class GuildMemberCatalogTest extends TestCase
             self::fail('An unconfigured Discord must not be queried.');
         } catch (HttpException $exception) {
             self::assertSame(503, $exception->getStatusCode());
-            self::assertSame('Le Discord n\'est pas configuré : la liste des membres est indisponible.', $exception->getMessage());
+            self::assertSame('Le Discord n\'est pas configuré : seuls les comptes déjà ouverts sur le portail sont listés.', $exception->getMessage());
         }
     }
 

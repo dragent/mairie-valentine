@@ -106,6 +106,44 @@ final class AssignJobProcessorTest extends TestCase
         self::assertSame(Job::SECRETAIRE, $result->getJob());
     }
 
+    public function testMayorDismissesADeputyWithoutTheirApproval(): void
+    {
+        $deputy = new User('9', 'dep');
+        $deputy->setJob(Job::ADJOINT);
+        $users = $this->createMock(UserRepository::class);
+        $users->method('find')->willReturn($deputy);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->once())
+            ->method('request')
+            ->with('DELETE', 'https://discord.com/api/v10/guilds/guild-1/members/9/roles/role-adjoint')
+            ->willReturn($this->discordResponse(204));
+
+        $result = $this->processor($users, $client, $this->mayor())
+            ->process($this->assignment(null), new Patch(), ['id' => 9]);
+
+        self::assertNull($result->getJob());
+    }
+
+    public function testMayorDismissesASecretaryWithoutTheirApproval(): void
+    {
+        $secretary = new User('2', 'clerk');
+        $secretary->setJob(Job::SECRETAIRE);
+        $users = $this->createMock(UserRepository::class);
+        $users->method('find')->willReturn($secretary);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->once())
+            ->method('request')
+            ->with('DELETE', 'https://discord.com/api/v10/guilds/guild-1/members/2/roles/role-secretaire')
+            ->willReturn($this->discordResponse(204));
+
+        $result = $this->processor($users, $client, $this->mayor())
+            ->process($this->assignment(null), new Patch(), ['id' => 2]);
+
+        self::assertNull($result->getJob());
+    }
+
     public function testDeputyCanDismissASecretary(): void
     {
         $secretary = new User('2', 'clerk');
@@ -139,9 +177,69 @@ final class AssignJobProcessorTest extends TestCase
                     ->process($this->assignment($job, '2'), new Post(), []);
                 self::fail($job->value.' must stay reserved to the mayor.');
             } catch (AccessDeniedHttpException $exception) {
-                self::assertSame('Le maire adjoint ne peut recruter que des secrétaires.', $exception->getMessage());
+                self::assertSame('Le maire adjoint ne peut recruter ou retirer que des secrétaires.', $exception->getMessage());
                 self::assertNull($citizen->getJob());
             }
+        }
+    }
+
+    public function testCannotChangeYourOwnJob(): void
+    {
+        $mayor = new User('1', 'mayor');
+        $mayor->setJob(Job::SECRETAIRE);
+        $users = $this->createMock(UserRepository::class);
+        $users->method('find')->willReturn($mayor);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->never())->method('request');
+
+        try {
+            $this->processor($users, $client, $this->asUser($mayor, mayor: true))
+                ->process($this->assignment(Job::ADJOINT), new Patch(), ['id' => 1]);
+            self::fail('A person must not change their own position.');
+        } catch (AccessDeniedHttpException $exception) {
+            self::assertSame('Vous ne pouvez pas modifier votre propre fonction.', $exception->getMessage());
+            self::assertSame(Job::SECRETAIRE, $mayor->getJob());
+        }
+    }
+
+    public function testDeputyCannotChangeYourOwnJob(): void
+    {
+        $deputy = new User('7', 'deputy');
+        $deputy->setJob(Job::ADJOINT);
+        $users = $this->createMock(UserRepository::class);
+        $users->method('findOneByDiscordId')->with('7')->willReturn($deputy);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->never())->method('request');
+
+        try {
+            $this->processor($users, $client, $this->asUser($deputy, mayor: false))
+                ->process($this->assignment(null, '7'), new Post(), []);
+            self::fail('A deputy must not change their own position.');
+        } catch (AccessDeniedHttpException $exception) {
+            self::assertSame('Vous ne pouvez pas modifier votre propre fonction.', $exception->getMessage());
+            self::assertSame(Job::ADJOINT, $deputy->getJob());
+        }
+    }
+
+    public function testDeputyCannotDismissADeputy(): void
+    {
+        $deputy = new User('9', 'dep');
+        $deputy->setJob(Job::ADJOINT);
+        $users = $this->createMock(UserRepository::class);
+        $users->method('find')->willReturn($deputy);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->never())->method('request');
+
+        try {
+            $this->processor($users, $client, $this->deputy())
+                ->process($this->assignment(null), new Patch(), ['id' => 9]);
+            self::fail('A deputy must not dismiss another deputy.');
+        } catch (AccessDeniedHttpException $exception) {
+            self::assertSame('Le maire adjoint ne peut recruter ou retirer que des secrétaires.', $exception->getMessage());
+            self::assertSame(Job::ADJOINT, $deputy->getJob());
         }
     }
 
@@ -219,6 +317,17 @@ final class AssignJobProcessorTest extends TestCase
             ),
             security: $security ?? $this->mayor(),
         );
+    }
+
+    private function asUser(User $user, bool $mayor): Security
+    {
+        $security = $this->createMock(Security::class);
+        $security->method('getUser')->willReturn($user);
+        $security->method('isGranted')->willReturnCallback(
+            static fn (mixed $attribute): bool => $mayor && User::ROLE_MAIRE === $attribute,
+        );
+
+        return $security;
     }
 
     private function mayor(): Security

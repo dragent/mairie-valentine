@@ -53,7 +53,11 @@ services:
       XDEBUG_MODE: ${XDEBUG_MODE:-off}
     volumes:
       - ./apps/api:/var/www/html:cached
+      # Vendor stays in the Linux volume: reading it through the Windows share
+      # added several seconds to every request.
+      - api_vendor:/var/www/html/vendor
       - api_var:/var/www/html/var
+      - ./docker/php/conf.d/dev.ini:/usr/local/etc/php/conf.d/zz-dev.ini:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -113,5 +117,6 @@ services:
 volumes:
   db_data:
   api_var:
+  api_vendor:
   web_node_modules:
   web_next_cache:
