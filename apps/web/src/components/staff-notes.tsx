@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { Fold } from "@/components/fold";
 import {
   ErrorBanner,
   Field,
@@ -35,40 +36,43 @@ export function StaffNotes() {
       <div className="space-y-10">
         <ErrorBanner message={error} />
 
-        <NoteFolio
-          title="Au greffe"
-          empty="Le greffe n'a pas encore de note."
-          notes={items === null ? null : current}
-          actionLabel="Archiver"
-          onAction={(note) => void update(note.id, { status: "archived" })}
-          isBusy={isBusy}
-        />
-
-        <ResourceForm
-          className="border-t border-line pt-8"
-          legend="Écrire une note"
-          submitLabel="Enregistrer"
-          isBusy={isBusy}
-          onSubmit={onSubmit}
-        >
-          <Field label="Titre" wide>
-            <TextInput
-              required
-              maxLength={180}
-              value={form.title}
-              onChange={(event) => setForm({ ...form, title: event.target.value })}
+        <Fold title="Au greffe">
+          <div className="space-y-10">
+            <NoteFolio
+              empty="Le greffe n'a pas encore de note."
+              notes={items === null ? null : current}
+              actionLabel="Archiver"
+              onAction={(note) => void update(note.id, { status: "archived" })}
+              isBusy={isBusy}
             />
-          </Field>
 
-          <Field label="Contenu" wide>
-            <TextArea
-              required
-              rows={5}
-              value={form.body}
-              onChange={(event) => setForm({ ...form, body: event.target.value })}
-            />
-          </Field>
-        </ResourceForm>
+            <ResourceForm
+              className="border-t border-line pt-8"
+              legend="Écrire une note"
+              submitLabel="Enregistrer"
+              isBusy={isBusy}
+              onSubmit={onSubmit}
+            >
+              <Field label="Titre" wide>
+                <TextInput
+                  required
+                  maxLength={180}
+                  value={form.title}
+                  onChange={(event) => setForm({ ...form, title: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Contenu" wide>
+                <TextArea
+                  required
+                  rows={5}
+                  value={form.body}
+                  onChange={(event) => setForm({ ...form, body: event.target.value })}
+                />
+              </Field>
+            </ResourceForm>
+          </div>
+        </Fold>
       </div>
 
       <aside className="h-full bg-background/35 px-6 py-6 lg:border-l lg:border-line lg:pl-8">
@@ -95,7 +99,7 @@ function NoteFolio({
   isBusy,
   archived = false,
 }: {
-  title: string;
+  title?: string;
   empty: string;
   notes: Note[] | null;
   actionLabel: string;
@@ -105,16 +109,18 @@ function NoteFolio({
 }) {
   return (
     <div>
-      <h2 className={`font-display text-2xl ${archived ? "text-muted" : "text-heading"}`}>{title}</h2>
+      {title && (
+        <h2 className={`font-display text-2xl ${archived ? "text-muted" : "text-heading"}`}>{title}</h2>
+      )}
 
       {folio === null ? (
-        <p className="mt-4 text-muted">Chargement…</p>
+        <p className={title ? "mt-4 text-muted" : "text-muted"}>Chargement…</p>
       ) : folio.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">{empty}</p>
+        <p className={title ? "mt-4 text-sm text-muted" : "text-sm text-muted"}>{empty}</p>
       ) : (
-        <ul className="mt-2 divide-y divide-line">
+        <ul className={title ? "mt-2 divide-y divide-line" : "divide-y divide-line"}>
           {folio.map((note) => (
-            <li key={note.id} className="py-5">
+            <li key={note.id} className="py-5 first:pt-0">
               <h3 className={`font-display text-lg ${archived ? "text-muted" : "text-heading"}`}>
                 {note.title}
               </h3>

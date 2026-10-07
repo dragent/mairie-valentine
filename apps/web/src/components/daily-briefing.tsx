@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { Fold } from "@/components/fold";
 import { appointments, decrees, municipalEvents, notes, ROLE_ELU } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { dailyBriefing, type BriefingLine } from "@/lib/briefing";
@@ -11,11 +12,12 @@ export function DailyBriefing() {
   const { hasRole } = useAuth();
 
   return (
-    <section className="mb-10 space-y-6">
-      <h2 className="font-display text-2xl text-heading">Aujourd&apos;hui</h2>
-      <DeskToday />
-      {hasRole(ROLE_ELU) && <DecreeHorizon />}
-    </section>
+    <Fold title="Aujourd'hui" className="mb-10">
+      <div className="space-y-6">
+        <DeskToday />
+        {hasRole(ROLE_ELU) && <DecreeHorizon />}
+      </div>
+    </Fold>
   );
 }
 
