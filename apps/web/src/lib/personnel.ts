@@ -100,6 +100,26 @@ export function cessionHint(viewerHoldsTheSeat: boolean): string {
     : "La personne choisie reçoit la charge de maire. Celle qui l'occupe la perd.";
 }
 
+export function registerRow(member: {
+  discordId: string;
+  username: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  job?: Job | null;
+  jobLabel?: string | null;
+  lastLoginAt?: string | null;
+}): GuildMember & { lastLoginAt: string | null } {
+  return {
+    discordId: member.discordId,
+    username: member.username,
+    displayName: member.displayName ?? null,
+    avatarUrl: member.avatarUrl ?? null,
+    job: member.job ?? null,
+    jobLabel: member.jobLabel ?? null,
+    lastLoginAt: member.lastLoginAt ?? null,
+  };
+}
+
 export function withLastVisits<T extends { discordId: string }>(
   members: T[],
   visits: { discordId: string; lastLoginAt?: string | null }[],

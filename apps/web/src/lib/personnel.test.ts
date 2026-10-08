@@ -10,6 +10,7 @@ import {
   isRowLocked,
   lastVisitText,
   officeChoices,
+  registerRow,
   showMemberSearch,
   staffLead,
   withLastVisits,
@@ -130,5 +131,19 @@ describe("the wording", () => {
     expect(merged[1]?.lastLoginAt).toBeNull();
     expect(lastVisitText(null, () => "unused")).toBe("N'a pas encore ouvert le portail");
     expect(lastVisitText("2026-10-07T07:35:00.000Z", () => "7 oct.")).toBe("Dernière visite : 7 oct.");
+  });
+
+  it("keeps the stored visit when the local register is copied for the page", () => {
+    const row = registerRow({
+      discordId: "1",
+      username: "dragent0",
+      displayName: "William HARRINGTON",
+      lastLoginAt: "2026-10-08T17:53:01.000Z",
+    });
+
+    expect(row.lastLoginAt).toBe("2026-10-08T17:53:01.000Z");
+    expect(withLastVisits([{ discordId: "1", username: "dragent0" }], [row])[0]?.lastLoginAt).toBe(
+      "2026-10-08T17:53:01.000Z",
+    );
   });
 });

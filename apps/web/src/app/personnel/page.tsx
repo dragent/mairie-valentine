@@ -27,6 +27,7 @@ import {
   lastVisitText,
   memberName,
   officeChoices,
+  registerRow,
   showMemberSearch,
   staffLead,
   withLastVisits,
@@ -53,16 +54,7 @@ export default function StaffPage() {
     let cancelled = false;
     let guildLoaded = false;
 
-    const localStaff = fetchStaff(token).then((staff) =>
-      staff.map((member) => ({
-        discordId: member.discordId,
-        username: member.username,
-        displayName: member.displayName ?? null,
-        avatarUrl: member.avatarUrl ?? null,
-        job: member.job ?? null,
-        jobLabel: member.jobLabel ?? null,
-      })),
-    );
+    const localStaff = fetchStaff(token).then((staff) => staff.map(registerRow));
 
     // The register is already in the database. Show it while Discord answers,
     // instead of waiting for a failure before starting the second request.
@@ -264,11 +256,6 @@ export default function StaffPage() {
                                   )}
                                   <span className="min-w-0">
                                     <span className="block truncate font-display text-lg text-heading">{name}</span>
-                                    {member.displayName !== null && member.displayName !== member.username && (
-                                      <span className="block truncate text-xs tracking-wide text-muted">
-                                        {member.username}
-                                      </span>
-                                    )}
                                     <span className="block truncate text-xs text-muted">
                                       {lastVisitText(member.lastLoginAt, formatDateTime)}
                                     </span>
