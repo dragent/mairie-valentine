@@ -61,7 +61,7 @@ export function CalendarSheetDialog({
   return (
     <dialog
       ref={dialog}
-      className="calendar-sheet ledger-frame bg-surface text-foreground"
+      className={`calendar-sheet ledger-frame bg-surface text-foreground${sheet?.kind === "appointment" ? " calendar-sheet-note" : ""}`}
       aria-labelledby="calendar-sheet-title"
       onCancel={(event) => {
         event.preventDefault();
@@ -116,9 +116,11 @@ function SheetBody({
     }
   }
 
+  const showsPoster = sheet.kind !== "appointment";
+
   return (
-    <div className="grid max-h-[calc(100vh-4rem)] sm:grid-cols-2">
-      <Poster posterUrl={sheet.posterUrl} title={sheet.title} />
+    <div className={showsPoster ? "grid max-h-[calc(100vh-4rem)] sm:grid-cols-2" : "max-h-[calc(100vh-4rem)]"}>
+      {showsPoster && <Poster posterUrl={sheet.posterUrl} title={sheet.title} />}
       <div className="flex min-h-0 flex-col overflow-y-auto px-6 py-6 sm:px-8">
         <div className="flex items-start justify-between gap-4">
           <p className="text-xs tracking-[0.22em] text-gold-dark uppercase">{sheet.kindLabel}</p>
