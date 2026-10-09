@@ -5,10 +5,11 @@ import { useState, type FormEvent } from "react";
 
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner, Field, ResourceForm, TextArea, TextInput } from "@/components/resource-table";
-import { ROLE_SECRETAIRE, appointments } from "@/lib/api";
+import { ROLE_SECRETAIRE, appointments, type AppointmentStatus } from "@/lib/api";
+import { appointmentsToClose } from "@/lib/appointments-to-close";
 import { useAuth } from "@/lib/auth-context";
-import { toApiDate } from "@/lib/dates";
-import { describe } from "@/lib/use-resource";
+import { formatDateTime, toApiDate } from "@/lib/dates";
+import { describe, useResource } from "@/lib/use-resource";
 
 const EMPTY_FORM = {
   subject: "",
@@ -21,10 +22,12 @@ const EMPTY_FORM = {
 
 export default function AppointmentsPage() {
   const { token, user } = useAuth();
+  const register = useResource(appointments);
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const toClose = appointmentsToClose(register.items ?? []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,6 +57,7 @@ export default function AppointmentsPage() {
         status: "scheduled",
         notes: form.notes === "" ? null : form.notes,
       });
+      register.reload();
       setForm(EMPTY_FORM);
       setError(null);
       setNotice("Le rendez-vous est enregistré.");
@@ -62,6 +66,15 @@ export default function AppointmentsPage() {
       setError(describe(cause));
     } finally {
       setIsBusy(false);
+    }
+  }
+
+  async function closeAppointment(id: number, status: AppointmentStatus) {
+    setNotice(null);
+    setError(null);
+
+    if (await register.update(id, { status })) {
+      setNotice(status === "honored" ? "Le rendez-vous est marqué honoré." : "Le rendez-vous est marqué annulé.");
     }
   }
 
@@ -93,8 +106,48 @@ export default function AppointmentsPage() {
         <Ornament />
 
         <div className="space-y-8">
-          <ErrorBanner message={error} />
+          <ErrorBanner message={error ?? register.error} />
           {notice !== null && <p className="text-sm text-accent">{notice}</p>}
+
+          <section>
+            <h2 className="font-display text-2xl text-heading">À clôturer</h2>
+            {register.items === null ? (
+              <p className="mt-4 text-sm text-muted">Chargement…</p>
+            ) : toClose.length === 0 ? (
+              <p className="mt-4 text-sm text-muted">Aucun rendez-vous passé n&apos;attend d&apos;être marqué.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-line">
+                {toClose.map((appointment) => (
+                  <li key={appointment.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
+                    <span>
+                      <span className="block font-display text-lg text-heading">
+                        {appointment.subject} — {appointment.citizenName}
+                      </span>
+                      <span className="text-sm text-muted">{formatDateTime(appointment.scheduledAt)}</span>
+                    </span>
+                    <span className="flex gap-4 text-sm">
+                      <button
+                        type="button"
+                        className="text-muted underline hover:text-foreground disabled:opacity-60"
+                        disabled={isBusy || register.isBusy}
+                        onClick={() => void closeAppointment(appointment.id, "honored")}
+                      >
+                        Honoré
+                      </button>
+                      <button
+                        type="button"
+                        className="text-muted underline hover:text-foreground disabled:opacity-60"
+                        disabled={isBusy || register.isBusy}
+                        onClick={() => void closeAppointment(appointment.id, "cancelled")}
+                      >
+                        Annulé
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
           <ResourceForm
             className=""

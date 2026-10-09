@@ -110,6 +110,10 @@ dialog.calendar-sheet {
   color: var(--foreground);
 }
 
+dialog.calendar-sheet.calendar-sheet-note {
+  width: min(32rem, calc(100vw - 2rem));
+}
+
 dialog.calendar-sheet::backdrop {
   background: rgba(23, 19, 16, 0.72);
 }
