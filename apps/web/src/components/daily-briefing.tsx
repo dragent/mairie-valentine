@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { Fold } from "@/components/fold";
+import { LoadingSeal } from "@/components/loading-seal";
 import { appointments, decrees, municipalEvents, notes, ROLE_ELU } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { dailyBriefing, type BriefingLine } from "@/lib/briefing";
@@ -28,7 +29,7 @@ function DeskToday() {
   const pending = meetings.items === null || events.items === null || memos.items === null;
 
   if (pending) {
-    return <p className="text-sm text-muted">Chargement…</p>;
+    return <LoadingSeal />;
   }
 
   const briefing = dailyBriefing({
