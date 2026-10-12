@@ -2,7 +2,7 @@ import Image from "next/image";
 
 /** Municipal seal shown while any page other than the home is still loading. */
 export function LoadingSeal({
-  label = "Chargement…",
+  label = "Lecture…",
   className = "",
 }: {
   label?: string;
