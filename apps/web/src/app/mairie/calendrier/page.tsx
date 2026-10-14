@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { CalendarSheetDialog } from "@/components/calendar-sheet";
+import { LoadingSeal } from "@/components/loading-seal";
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner } from "@/components/resource-table";
 import { ROLE_ELU, ROLE_SECRETAIRE, appointments, decrees, municipalEvents, type Decree } from "@/lib/api";
@@ -123,7 +124,7 @@ export default function CalendarPage() {
               <ErrorBanner message={message} />
 
               {pending ? (
-                <p className="text-muted">Chargement…</p>
+                <LoadingSeal />
               ) : (
                 <div className="grid grid-cols-7 border border-line">
                   {WEEKDAYS.map((weekday, index) => (
