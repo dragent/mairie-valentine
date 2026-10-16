@@ -3,10 +3,12 @@
 import Image from "next/image";
 import { useState, type FormEvent } from "react";
 
+import { CitizenNameField } from "@/components/citizen-name-field";
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner, Field, ResourceForm, TextArea, TextInput } from "@/components/resource-table";
 import { ROLE_SECRETAIRE, appointments, type AppointmentStatus } from "@/lib/api";
 import { appointmentsToClose } from "@/lib/appointments-to-close";
+import { citizenSuggestions } from "@/lib/citizen-register";
 import { useAuth } from "@/lib/auth-context";
 import { formatDateTime, toApiDate } from "@/lib/dates";
 import { describe, useResource } from "@/lib/use-resource";
@@ -24,6 +26,7 @@ export default function AppointmentsPage() {
   const { token, user } = useAuth();
   const register = useResource(appointments);
   const [form, setForm] = useState(EMPTY_FORM);
+  const suggestions = citizenSuggestions(register.items ?? [], form.citizenName);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
@@ -165,14 +168,11 @@ export default function AppointmentsPage() {
               />
             </Field>
 
-            <Field label="Citoyen">
-              <TextInput
-                required
-                maxLength={120}
-                value={form.citizenName}
-                onChange={(event) => setForm({ ...form, citizenName: event.target.value })}
-              />
-            </Field>
+            <CitizenNameField
+              value={form.citizenName}
+              suggestions={suggestions}
+              onChange={(citizenName) => setForm({ ...form, citizenName })}
+            />
 
             <Field label="Date et heure">
               <TextInput
