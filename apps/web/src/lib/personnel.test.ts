@@ -8,9 +8,12 @@ import {
   cessionWarning,
   filterMembers,
   isRowLocked,
+  lastVisitText,
   officeChoices,
+  registerRow,
   showMemberSearch,
   staffLead,
+  withLastVisits,
 } from "@/lib/personnel";
 
 const MAYOR_ID = "1";
@@ -116,5 +119,31 @@ describe("the wording", () => {
     expect(cessionWarning("Ada", true)).toContain("Vous redeviendrez citoyen");
     expect(cessionHint(true)).toContain("Vous retombez citoyen");
     expect(cessionWarning("Ada", false)).not.toContain("Vous redeviendrez citoyen");
+  });
+
+  it("keeps the last portal visit next to the Discord member", () => {
+    const merged = withLastVisits(
+      [{ discordId: "1" }, { discordId: "2" }],
+      [{ discordId: "1", lastLoginAt: "2026-10-07T07:35:00.000Z" }],
+    );
+
+    expect(merged[0]?.lastLoginAt).toBe("2026-10-07T07:35:00.000Z");
+    expect(merged[1]?.lastLoginAt).toBeNull();
+    expect(lastVisitText(null, () => "unused")).toBe("N'a pas encore ouvert le portail");
+    expect(lastVisitText("2026-10-07T07:35:00.000Z", () => "7 oct.")).toBe("Dernière visite : 7 oct.");
+  });
+
+  it("keeps the stored visit when the local register is copied for the page", () => {
+    const row = registerRow({
+      discordId: "1",
+      username: "dragent0",
+      displayName: "William HARRINGTON",
+      lastLoginAt: "2026-10-08T17:53:01.000Z",
+    });
+
+    expect(row.lastLoginAt).toBe("2026-10-08T17:53:01.000Z");
+    expect(withLastVisits([{ discordId: "1", username: "dragent0" }], [row])[0]?.lastLoginAt).toBe(
+      "2026-10-08T17:53:01.000Z",
+    );
   });
 });

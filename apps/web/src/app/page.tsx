@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 
+import { DailyBriefing } from "@/components/daily-briefing";
 import { StaffNotes } from "@/components/staff-notes";
 import { ROLE_SECRETAIRE } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -21,7 +22,10 @@ export default function HomePage() {
   return (
     <OpenBinder signatory={user.displayName ?? user.username} office={user.jobLabel}>
       {hasRole(ROLE_SECRETAIRE) ? (
-        <StaffNotes />
+        <>
+          <DailyBriefing />
+          <StaffNotes />
+        </>
       ) : (
         <p className="text-muted">
           Les notes du maire, des adjoints et des secrétaires sont réservées au personnel de la
