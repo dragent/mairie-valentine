@@ -94,6 +94,31 @@ export function fetchCurrentUser(token: string): Promise<CurrentUser> {
   return apiFetch<CurrentUser>("/api/me", { token, cache: "no-store" });
 }
 
+export type PublicDecree = {
+  reference: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  posterPath?: string | null;
+};
+
+export type PublicEvent = {
+  title: string;
+  startsAt: string;
+  endsAt?: string | null;
+  location?: string | null;
+  posterPath?: string | null;
+};
+
+export type PublicBoard = {
+  decrees: PublicDecree[];
+  events: PublicEvent[];
+};
+
+export function fetchPublicBoard(): Promise<PublicBoard> {
+  return apiFetch<PublicBoard>("/api/public/board", { cache: "no-store" });
+}
+
 /**
  * API Platform leaves null properties out of its payloads, hence the optional
  * fields below on everything that is nullable server-side.
