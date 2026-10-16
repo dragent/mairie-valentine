@@ -47,3 +47,29 @@ export function citizenRegister(appointments: Visit[]): CitizenRecord[] {
 
   return [...groups.values()].sort((left, right) => right.lastVisit.localeCompare(left.lastVisit));
 }
+
+/**
+ * Names already written at the desk that match what is being typed. An empty
+ * field offers nothing; the spelling already in the field is not offered again.
+ */
+export function citizenSuggestions(appointments: Visit[], query: string): string[] {
+  const needle = fold(query);
+
+  if (needle === "") {
+    return [];
+  }
+
+  const written = query.trim();
+
+  return citizenRegister(appointments)
+    .map((citizen) => citizen.name)
+    .filter((name) => name !== written && fold(name).includes(needle));
+}
+
+function fold(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase("fr")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
