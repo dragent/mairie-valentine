@@ -15,6 +15,7 @@
 apps/api/vendor
 apps/api/var
 apps/api/config/jwt
+apps/api/public/uploads
 apps/api/.phpunit.cache
 
 docker/mysql/data
