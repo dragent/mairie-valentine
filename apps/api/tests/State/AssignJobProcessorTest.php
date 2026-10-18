@@ -29,6 +29,38 @@ final class AssignJobProcessorTest extends TestCase
 {
     use DiscordHttpMock;
 
+    public function testACitizenCannotAssignAJob(): void
+    {
+        $target = new User('2', 'ada');
+        $users = $this->createMock(UserRepository::class);
+        $users->method('find')->willReturn($target);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->never())->method('request');
+
+        $this->expectException(AccessDeniedHttpException::class);
+        $this->expectExceptionMessage('Seul un élu peut modifier une fonction.');
+
+        $this->processor($users, $client, $this->withRoles(User::ROLE_USER))
+            ->process($this->assignment(Job::MAIRE), new Patch(), ['id' => 2]);
+    }
+
+    public function testASecretaryCannotAssignAJob(): void
+    {
+        $target = new User('3', 'clerk');
+        $users = $this->createMock(UserRepository::class);
+        $users->method('find')->willReturn($target);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->never())->method('request');
+
+        $this->expectException(AccessDeniedHttpException::class);
+        $this->expectExceptionMessage('Seul un élu peut modifier une fonction.');
+
+        $this->processor($users, $client, $this->withRoles(User::ROLE_USER, User::ROLE_SECRETAIRE))
+            ->process($this->assignment(Job::SECRETAIRE), new Patch(), ['id' => 3]);
+    }
+
     public function testUnknownAccountAnswers404(): void
     {
         $users = $this->createMock(UserRepository::class);
@@ -342,8 +374,15 @@ final class AssignJobProcessorTest extends TestCase
 
     private function deputy(): Security
     {
+        return $this->withRoles(User::ROLE_USER, User::ROLE_SECRETAIRE, User::ROLE_ELU);
+    }
+
+    private function withRoles(string ...$roles): Security
+    {
         $security = $this->createMock(Security::class);
-        $security->method('isGranted')->willReturn(false);
+        $security->method('isGranted')->willReturnCallback(
+            static fn (mixed $attribute): bool => \in_array($attribute, $roles, true),
+        );
 
         return $security;
     }
