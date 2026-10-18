@@ -9,6 +9,22 @@ esac
 
 mkdir -p var/cache var/log config/jwt
 
+# Production refuses the compose placeholders. The real values come from the server environment.
+if [ "$APP_ENV" = 'prod' ]; then
+	case "${APP_SECRET:-}" in
+		''|change_me_in_env)
+			echo '[entrypoint] APP_SECRET must be set to a unique value.' >&2
+			exit 1
+			;;
+	esac
+	case "${JWT_PASSPHRASE:-}" in
+		''|change_me_in_env)
+			echo '[entrypoint] JWT_PASSPHRASE must be set to a unique value.' >&2
+			exit 1
+			;;
+	esac
+fi
+
 if [ "$APP_ENV" != 'prod' ] && [ ! -f vendor/autoload_runtime.php ]; then
 	echo '[entrypoint] Installing Composer dependencies...'
 	# Bind mounts (Windows especially) leave stale assets:install temp dirs that

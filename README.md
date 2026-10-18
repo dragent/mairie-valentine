@@ -36,6 +36,14 @@ openssl rand -hex 32   # JWT_PASSPHRASE
 `JWT_PASSPHRASE` ne doit plus changer une fois les clés générées, sinon les clés
 du volume `api_jwt` deviennent illisibles.
 
+Ces valeurs vivent uniquement dans le `.env` de la machine (ou dans les variables
+du serveur). `apps/api/.env` et `apps/api/.env.dev` restent des modèles vides.
+Un `APP_SECRET` a déjà été publié dans l'historique de `.env.dev` : le considérer
+comme brûlé, et le remplacer partout où il aurait été recopié. Supprimer la ligne
+ne l'efface pas des anciens commits. Les clés JWT (`config/jwt/*.pem`) ne sont pas
+versionnées ; si une copie a circulé hors du dépôt, régénérer la paire et changer
+`JWT_PASSPHRASE`. Le frontend ne reçoit que `NEXT_PUBLIC_API_URL`.
+
 ### Application Discord
 
 Sur https://discord.com/developers/applications, onglet *OAuth2* :
