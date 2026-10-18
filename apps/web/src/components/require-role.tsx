@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 
+import { LoadingSeal } from "@/components/loading-seal";
 import { discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
@@ -13,7 +14,7 @@ export function RequireRole({ role, children }: { role: string; children: ReactN
   const { user, isLoading, hasRole } = useAuth();
 
   if (isLoading) {
-    return <p className="text-muted">Chargement…</p>;
+    return <LoadingSeal />;
   }
 
   if (!user) {
