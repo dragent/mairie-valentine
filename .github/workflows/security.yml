@@ -1,0 +1,81 @@
+name: Security checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Tracked secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refuse committed secrets and keys
+        run: sh scripts/check-secrets.sh
+
+  api:
+    name: API tests and audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+          extensions: ctype, iconv, intl, pdo_mysql, zip
+      - name: Install
+        working-directory: apps/api
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Tests
+        working-directory: apps/api
+        run: php bin/phpunit
+      - name: Dependency audit
+        working-directory: apps/api
+        run: composer audit --abandoned=ignore
+      - name: Container configuration
+        working-directory: apps/api
+        env:
+          APP_ENV: test
+          APP_DEBUG: 0
+          APP_SECRET: "$ecretf0rt3st"
+          DATABASE_URL: "mysql://mairie:mairie@127.0.0.1:3306/mairie_valentine?serverVersion=8.4.0&charset=utf8mb4"
+          JWT_PASSPHRASE: test
+          FRONTEND_URL: http://localhost:3000
+          DEFAULT_URI: http://localhost:8080
+          CORS_ALLOW_ORIGIN: "^https?://localhost$"
+          DISCORD_CLIENT_ID: test
+          DISCORD_CLIENT_SECRET: test
+          DISCORD_GUILD_ID: ""
+          DISCORD_BOT_TOKEN: ""
+          DISCORD_ROLE_MAIRE: ""
+          DISCORD_ROLE_ADJOINT: ""
+          DISCORD_ROLE_SECRETAIRE: ""
+        run: |
+          mkdir -p config/jwt
+          openssl genpkey -algorithm RSA -aes-256-cbc -pass pass:test -out config/jwt/private.pem -pkeyopt rsa_keygen_bits:2048
+          openssl pkey -in config/jwt/private.pem -passin pass:test -pubout -out config/jwt/public.pem
+          php bin/console lint:yaml config
+          php bin/console lint:container
+
+  web:
+    name: Web tests and audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install
+        working-directory: apps/web
+        run: npm ci
+      - name: Tests
+        working-directory: apps/web
+        run: npm test
+      - name: Dependency audit
+        working-directory: apps/web
+        run: npm audit --omit=dev --audit-level=high
