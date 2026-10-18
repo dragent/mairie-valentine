@@ -42,12 +42,14 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  // Dynamic rendering lets Next stamp the per-request CSP nonce on its scripts.
+  // The nonce stays off <html>: browsers hide that attribute after parsing,
+  // and hydration then reports a mismatch.
+  await headers();
 
   return (
     <html
       lang="fr"
-      nonce={nonce}
       className={`${geistSans.variable} ${geistMono.variable} ${rye.variable} ${register.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
