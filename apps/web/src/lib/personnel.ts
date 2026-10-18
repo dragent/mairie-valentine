@@ -99,3 +99,43 @@ export function cessionHint(viewerHoldsTheSeat: boolean): string {
     ? "La personne choisie reçoit la charge de maire. Vous retombez citoyen."
     : "La personne choisie reçoit la charge de maire. Celle qui l'occupe la perd.";
 }
+
+export function registerRow(member: {
+  discordId: string;
+  username: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  job?: Job | null;
+  jobLabel?: string | null;
+  lastLoginAt?: string | null;
+}): GuildMember & { lastLoginAt: string | null } {
+  return {
+    discordId: member.discordId,
+    username: member.username,
+    displayName: member.displayName ?? null,
+    avatarUrl: member.avatarUrl ?? null,
+    job: member.job ?? null,
+    jobLabel: member.jobLabel ?? null,
+    lastLoginAt: member.lastLoginAt ?? null,
+  };
+}
+
+export function withLastVisits<T extends { discordId: string }>(
+  members: T[],
+  visits: { discordId: string; lastLoginAt?: string | null }[],
+): (T & { lastLoginAt: string | null })[] {
+  const byId = new Map(visits.map((visit) => [visit.discordId, visit.lastLoginAt ?? null]));
+
+  return members.map((member) => ({
+    ...member,
+    lastLoginAt: byId.get(member.discordId) ?? null,
+  }));
+}
+
+export function lastVisitText(iso: string | null, format: (value: string) => string): string {
+  if (iso === null || iso === "") {
+    return "N'a pas encore ouvert le portail";
+  }
+
+  return `Dernière visite : ${format(iso)}`;
+}
