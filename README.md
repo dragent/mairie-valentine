@@ -1,148 +1,235 @@
-# Mairie de Valentine
+# 🦅 Mairie de Valentine — Portail administratif
 
-Portail administratif de la ville de Valentine pour un serveur de jeu de rôle **RedM**.
+> *« Un maire peut être remplacé. Une ville peut changer de mains. Mais tant que ses habitants tiennent debout, Valentine demeure. »*
+>
+> **William Harrington — Maire de Valentine, 1889**
 
-| Composant  | Techno                                      | URL locale                        |
-| ---------- | ------------------------------------------- | --------------------------------- |
-| Front      | Next.js 16 (App Router, TypeScript, Tailwind 4) | http://localhost:3000         |
-| API        | Symfony 7.4 LTS + API Platform 4            | http://localhost:8080/api/docs    |
-| Base       | MySQL 8.4                                   | `localhost:3307`                  |
-| Adminer    | profil `tools`                              | http://localhost:8081             |
+---
 
-L'authentification est déléguée à **Discord** (OAuth2) ; l'API ne stocke aucun
-mot de passe et délivre un **JWT** signé par une paire de clés RSA.
+<p align="center">
+  <strong>VALENTINE MUNICIPAL ADMINISTRATION</strong><br>
+  <em>Administration • Organisation • Responsabilité</em>
+</p>
 
-## Démarrage
+<p align="center">
+  <img src="https://img.shields.io/badge/Projet-RedM_RP-8B4513?style=flat-square" alt="Projet RedM RP">
+  <img src="https://img.shields.io/badge/Frontend-Next.js_16-black?style=flat-square&logo=next.js" alt="Next.js 16">
+  <img src="https://img.shields.io/badge/Backend-Symfony_7.4-000000?style=flat-square&logo=symfony" alt="Symfony 7.4">
+  <img src="https://img.shields.io/badge/Database-MySQL_8.4-4479A1?style=flat-square&logo=mysql" alt="MySQL 8.4">
+  <img src="https://img.shields.io/badge/Deployment-Docker-2496ED?style=flat-square&logo=docker" alt="Docker">
+</p>
 
-Prérequis : Docker Desktop. Rien d'autre n'a besoin d'être installé sur la machine.
+## Présentation
+
+La mairie de Valentine dispose désormais d'un portail administratif conçu pour structurer la gestion municipale d'un serveur de jeu de rôle **RedM**, dans l'univers du Far West de 1889.
+
+Ce projet a pour ambition de fournir aux élus et au personnel municipal un espace de travail centralisé, organisé autour de leurs responsabilités, de leurs fonctions et des besoins de la ville.
+
+Derrière chaque décision se trouvent des responsabilités. Derrière chaque document, une trace. Et derrière chaque fonction, une obligation envers les habitants.
+
+Le portail traduit ces principes en outils numériques modernes, sans perdre l'identité institutionnelle de Valentine.
+
+## Fonctionnalités
+
+### 🏛️ Administration municipale
+
+- **Rendez-vous :** centralisation et suivi des rendez-vous municipaux.
+- **Événements :** organisation et gestion des événements de la ville.
+- **Notes internes :** conservation des informations nécessaires au fonctionnement de la mairie.
+- **Décrets municipaux :** gestion des actes administratifs et attribution automatique de leurs références.
+- **Gestion du personnel :** recrutement des secrétaires, nomination des adjoints et transmission de la fonction de maire.
+
+### 🔐 Authentification et autorisations
+
+L'authentification repose sur **Discord OAuth2**. Le portail ne stocke aucun mot de passe Discord et utilise des jetons JWT signés par une paire de clés RSA pour les sessions applicatives.
+
+Les fonctions municipales sont synchronisées avec les rôles Discord configurés sur le serveur.
+
+Les accès sont contrôlés côté API selon les responsabilités de chaque utilisateur. L'interface ne constitue donc pas, à elle seule, la barrière de sécurité.
+
+### ⚙️ Organisation des fonctions
+
+| Fonction | Responsabilités principales |
+| --- | --- |
+| Secrétaire | Gestion de l'espace de travail municipal |
+| Maire adjoint | Administration courante et recrutement des secrétaires |
+| Maire | Responsabilités des élus, nominations et transmission de la fonction |
+| Administrateur | Privilèges techniques attribués séparément |
+
+Les autorisations effectives sont définies par la configuration de sécurité du backend. Les opérations impliquant Discord nécessitent également les permissions correspondantes du bot.
+
+## Architecture technique
+
+Le projet adopte une architecture séparant l'interface utilisateur, la logique métier et la persistance des données.
+
+| Composant | Technologie |
+| --- | --- |
+| Frontend | Next.js 16, App Router, TypeScript |
+| Interface | Tailwind CSS 4 |
+| Backend | Symfony 7.4 LTS |
+| API | API Platform 4 |
+| ORM et migrations | Doctrine |
+| Base de données | MySQL 8.4 |
+| Authentification | Discord OAuth2 et JWT RSA |
+| Conteneurisation | Docker Compose |
+| Administration BDD | Adminer, profil optionnel `tools` |
+
+### Organisation du dépôt
+
+```text
+mairie-valentine/
+├── apps/
+│   ├── web/                 # Interface Next.js
+│   │   └── src/
+│   │       ├── app/         # Pages et espaces municipaux
+│   │       └── lib/         # Client API et authentification
+│   └── api/                 # Backend Symfony
+│       ├── src/
+│       │   ├── Controller/
+│       │   ├── Dto/
+│       │   ├── Entity/
+│       │   ├── Enum/
+│       │   ├── Security/
+│       │   ├── Service/
+│       │   └── State/
+│       └── config/
+├── docker/                  # Images et configurations
+├── compose.yaml             # Environnement de développement
+├── compose.prod.yaml        # Configuration de production
+├── Makefile                 # Commandes courantes
+└── .env.example             # Modèle de configuration
+```
+
+## Installation
+
+### Prérequis
+
+- Docker Desktop ou Docker Engine avec Docker Compose.
+- Une application Discord configurée pour OAuth2.
+- Un bot Discord disposant des permissions nécessaires à la synchronisation des rôles.
+
+Les dépendances applicatives sont installées dans les conteneurs.
+
+### 1. Récupérer le projet
 
 ```bash
-cp .env.example .env     # puis renseigner APP_SECRET, JWT_PASSPHRASE et les identifiants Discord
+git clone https://github.com/dragent/mairie-valentine.git
+cd mairie-valentine
+```
+
+### 2. Configurer l'environnement
+
+```bash
+cp .env.example .env
+```
+
+Renseignez les variables nécessaires, notamment :
+
+- `APP_SECRET`
+- `JWT_PASSPHRASE`
+- `DISCORD_CLIENT_ID`
+- `DISCORD_CLIENT_SECRET`
+- `DISCORD_BOT_TOKEN`
+- `DISCORD_GUILD_ID`
+- Les identifiants des rôles Discord
+- Les URL de l'API et du frontend, selon l'environnement
+
+Générez les secrets applicatifs avec :
+
+```bash
+openssl rand -hex 32
+```
+
+**Attention :** ne modifiez pas `JWT_PASSPHRASE` après la génération des clés JWT sans prévoir une procédure de rotation des clés et des sessions.
+
+Ne publiez jamais le fichier `.env`, les jetons du bot ou les clés privées dans le dépôt.
+
+### 3. Démarrer l'application
+
+```bash
 docker compose up -d --build
 ```
 
-Au premier démarrage, le conteneur `api` installe les dépendances Composer,
-génère la paire de clés JWT et applique les migrations Doctrine.
-
-Avec `make` : `make init` enchaîne ces étapes, `make help` liste le reste.
-
-### Secrets à générer
+Ou, si la commande est disponible dans le Makefile :
 
 ```bash
-openssl rand -hex 32   # APP_SECRET
-openssl rand -hex 32   # JWT_PASSPHRASE
+make init
 ```
 
-`JWT_PASSPHRASE` ne doit plus changer une fois les clés générées, sinon les clés
-du volume `api_jwt` deviennent illisibles.
+### 4. Accéder aux services
 
-### Application Discord
+| Service | Adresse locale |
+| --- | --- |
+| Portail municipal | http://localhost:3000 |
+| Documentation de l'API | http://localhost:8080/api/docs |
+| Base de données | `localhost:3307` |
+| Adminer, si activé | http://localhost:8081 |
 
-Sur https://discord.com/developers/applications, onglet *OAuth2* :
+Les ports et variables peuvent être adaptés à la configuration de l'environnement.
 
-1. Déclarer l'URL de redirection `http://localhost:8080/auth/discord/check`
-   (en production : `${API_URL}/auth/discord/check`).
-2. Reporter *Client ID* et *Client Secret* dans `DISCORD_CLIENT_ID` et
-   `DISCORD_CLIENT_SECRET`.
-3. Optionnel : renseigner `DISCORD_GUILD_ID` pour n'autoriser que les membres du
-   serveur Discord de la ville.
+## Configuration Discord
 
-### Bot Discord
+Dans le [portail développeur Discord](https://discord.com/developers/applications) :
 
-Les fonctions à la mairie sont lues sur les rôles Discord, et réécrites là-bas
-quand le maire promeut quelqu'un : il faut donc un bot.
+1. Configurez l'URL de redirection OAuth2 : `http://localhost:8080/auth/discord/check`.
+2. Renseignez le Client ID et le Client Secret dans `.env`.
+3. Créez le bot et configurez son jeton.
+4. Activez l'intention privilégiée **Server Members Intent**.
+5. Attribuez au bot les permissions requises pour gérer les rôles.
+6. Placez son rôle au-dessus des rôles municipaux qu'il doit modifier.
+7. Renseignez les identifiants des rôles de maire, de maire adjoint et de secrétaire.
 
-1. Onglet *Bot* de l'application : créer le bot, copier son jeton dans
-   `DISCORD_BOT_TOKEN`, activer l'intent privilégié *Server Members Intent*,
-   puis l'inviter sur le serveur avec la permission *Gérer les rôles*. Sans
-   cet intent, le maire ne peut pas lister les membres du serveur.
-2. Dans les paramètres du serveur, placer le rôle du bot **au-dessus** de ceux
-   de maire, adjoint et secrétaire : Discord refuse toute modification d'un rôle
-   situé plus haut que le sien, et les promotions échoueraient.
-3. Activer le mode développeur sur Discord, puis clic droit sur chaque rôle →
-   *Copier l'identifiant*, et le reporter dans `DISCORD_ROLE_MAIRE`,
-   `DISCORD_ROLE_ADJOINT` et `DISCORD_ROLE_SECRETAIRE`.
+En production, remplacez les URL locales par les domaines réels et configurez correctement les URL de redirection OAuth2.
 
-Tant que `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` ou l'un des trois identifiants
-de rôle est vide, la synchronisation est désactivée : la colonne `users.job` se
-gère alors uniquement depuis le panel ou en base.
+Sans configuration Discord complète, la synchronisation des fonctions municipales reste désactivée.
 
-## Organisation
+## Sécurité et contrôle des accès
 
+Le projet applique plusieurs principes de sécurité :
+
+- Authentification déléguée à Discord.
+- Jetons JWT signés par une paire de clés RSA.
+- Contrôle des autorisations au niveau de l'API.
+- Attribution des fonctions selon les rôles Discord.
+- Attribution des auteurs et des dates par le backend.
+- Configuration séparée des environnements de développement et de production.
+
+La mise en production doit également prévoir des secrets robustes, HTTPS, une configuration CORS restrictive, des sauvegardes de base de données et une gestion rigoureuse des accès au serveur.
+
+## Développement
+
+### Commandes utiles
+
+```bash
+# Consulter les commandes disponibles
+make help
+
+# Exécuter les migrations Doctrine
+docker compose exec api php bin/console doctrine:migrations:migrate
+
+# Lancer le lint du frontend
+docker compose exec web npm run lint
+
+# Activer Adminer
+docker compose --profile tools up -d adminer
 ```
-apps/api            Symfony : API Platform, Doctrine, sécurité JWT
-  src/Controller    /auth/discord, /api/me, /health
-  src/Dto           Charges utiles qui ne sont pas des entités
-  src/Entity        User, Appointment, MunicipalEvent, Note, Decree
-  src/Enum          Job et les statuts des ressources
-  src/Security      Provisioning du compte et appels à l'API Discord
-  src/Service       JobAssigner (promotions)
-  src/State         Processeurs API Platform (auteur, promotion)
-apps/web            Next.js : pages, composants, client HTTP
-  src/app/mairie    Espace de travail : RDV, événements, notes, décrets, personnel
-  src/app/personnel Recrutement et nominations
-  src/lib/api.ts    Client fetch typé, résolution de l'URL de l'API
-  src/lib/auth-*    Contexte d'authentification (JWT en localStorage)
-docker/             Images PHP-FPM, nginx et Node
-compose.yaml        Stack de développement (bind mounts, Xdebug, hot reload)
-compose.prod.yaml   Surcouche de production (sources dans les images)
+
+Pour le débogage PHP, Xdebug est disponible et peut être activé via `XDEBUG_MODE=debug` dans `.env`.
+
+### Déploiement en production
+
+```bash
+docker compose \
+  -f compose.yaml \
+  -f compose.prod.yaml \
+  up -d --build
 ```
 
-## Parcours de connexion
+Avant le déploiement, configurez notamment `APP_ENV=prod`, `APP_DEBUG=0`, `AUTO_MIGRATE=0`, `API_URL`, `FRONTEND_URL` et `CORS_ALLOW_ORIGIN`.
 
-1. Le front envoie l'utilisateur sur `GET /auth/discord`.
-2. Symfony le redirige vers Discord (scopes `identify`, `email`, `guilds`).
-3. Discord revient sur `GET /auth/discord/check` : le compte local est créé ou
-   mis à jour — sa fonction y compris, relue sur les rôles du serveur — puis un
-   JWT est émis.
-4. L'utilisateur est renvoyé sur `/auth/callback#token=…`. Le fragment n'est
-   jamais transmis au serveur, donc le jeton n'apparaît dans aucun log d'accès.
-5. Le front stocke le jeton et appelle `GET /api/me` avec
-   `Authorization: Bearer <token>`.
+La variable `NEXT_PUBLIC_API_URL` étant intégrée au frontend lors du build, toute modification de l'URL de l'API nécessite de reconstruire l'image concernée.
 
-## Fonctions et rôles
-
-Trois fonctions se partagent la mairie, stockées dans `users.job` :
-
-| Fonction       | Rôle accordé      | Accès                                                  |
-| -------------- | ----------------- | ------------------------------------------------------ |
-| Secrétaire     | `ROLE_SECRETAIRE` | Accès à l'espace de travail                            |
-| Maire adjoint  | `ROLE_ELU`        | Idem, plus le recrutement des secrétaires              |
-| Maire          | `ROLE_MAIRE`      | Idem, plus la nomination des adjoints et la cession    |
-
-Hiérarchie définie dans `apps/api/config/packages/security.yaml` :
-
-`ROLE_USER` → `ROLE_SECRETAIRE` → `ROLE_ELU` → `ROLE_MAIRE` → `ROLE_ADMIN`
-
-Le maire et son adjoint ont les mêmes droits métier, portés par `ROLE_ELU`.
-L'adjoint recrute les secrétaires ; `ROLE_MAIRE` réserve la nomination des
-adjoints et la cession de la place.
-
-La fonction est déduite des rôles Discord à chaque connexion. Depuis
-`/personnel`, l'adjoint recrute les secrétaires parmi les membres du
-serveur — y compris ceux qui n'ont pas encore ouvert le portail. Le maire y
-nomme aussi les adjoints, ou cède sa place : le successeur devient l'unique
-maire et l'ancien redevient citoyen. L'API accorde le nouveau rôle Discord et
-retire l'ancien, et n'enregistre rien si Discord refuse.
-
-`ROLE_ADMIN`, qu'aucune fonction n'accorde, reste attribuable à la main dans la
-colonne `users.roles`.
-
-## Espace de travail
-
-Sous `/mairie`, chaque page est adossée à une collection API Platform, dont le
-contrôle d'accès est porté par l'entité :
-
-| Page                 | Ressource               | Rôle exigé        |
-| -------------------- | ----------------------- | ----------------- |
-| `/mairie/rendez-vous`| `/api/appointments`     | `ROLE_SECRETAIRE` |
-| `/mairie/evenements` | `/api/municipal_events` | `ROLE_SECRETAIRE` |
-| `/mairie/notes`      | `/api/notes`            | `ROLE_SECRETAIRE` |
-| `/mairie/decrets`    | `/api/decrees`          | `ROLE_ELU`        |
-| `/mairie/personnel`  | `/api/users`            | `ROLE_MAIRE`      |
-
-L'auteur et les dates sont posés par l'API, jamais par le client, et la
-référence d'un décret (`DEC-2026-001`) est attribuée à l'enregistrement.
+Les affiches d'événements et de décrets sont écrites par PHP dans `public/uploads` et servies par Nginx. En production, ce répertoire correspond au volume `api_uploads`, monté dans les deux conteneurs : une affiche déposée reste visible après un redémarrage ou une reconstruction. Ne supprimez pas ce volume, ni `api_jwt`, avec `docker compose down -v`.
 
 ## Sauvegardes
 
@@ -151,36 +238,32 @@ sh apps/api/bin/backup-database.sh
 sh apps/api/bin/restore-database.sh backups/mairie-YYYYMMDDTHHMMSSZ.sql
 ```
 
-Le mot de passe reste celui du conteneur `db` ; il n'est pas écrit dans le script.
-Les dumps vont dans `backups/`, qui n'est pas versionné. Après une restauration,
-vérifier les tables :
+Le mot de passe reste celui du conteneur `db` ; il n'est pas écrit dans le script. Les dumps vont dans `backups/`, qui n'est pas versionné. Après une restauration, vérifier les tables :
 
 ```bash
 docker compose exec db sh -c 'mysql -N -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW TABLES"'
 ```
 
-## Commandes utiles
+## Philosophie du projet
 
-```bash
-docker compose exec api php bin/console make:entity
-docker compose exec api php bin/console make:migration
-docker compose exec api php bin/console doctrine:migrations:migrate
-docker compose exec web npm run lint
-docker compose --profile tools up -d adminer
-```
+La mairie n'est pas seulement un bâtiment, un titre ou un bureau. Elle est le point de rencontre entre les institutions, les entreprises et les citoyens.
 
-Xdebug est installé mais désactivé : passer `XDEBUG_MODE=debug` dans `.env` et
-redémarrer le conteneur `api`.
+Ce portail a été conçu pour accompagner cette vision : structurer le travail municipal, clarifier les responsabilités et préserver la continuité administrative de Valentine.
 
-## Production
+Le code évolue. Les fonctions changent de mains. Les mandats prennent fin.
 
-```bash
-docker compose -f compose.yaml -f compose.prod.yaml up -d --build
-```
+Mais une administration bien organisée doit pouvoir continuer à servir la ville, quel que soit le nom inscrit sur la porte du maire.
 
-Les sources, les dépendances et le cache Symfony sont alors inclus dans les
-images (tags `:prod`, distincts des images de développement). Penser à mettre
-`APP_ENV=prod`, `APP_DEBUG=0`, `AUTO_MIGRATE=0`, à renseigner `API_URL` et
-`FRONTEND_URL` avec les vrais domaines et à restreindre `CORS_ALLOW_ORIGIN`.
-`NEXT_PUBLIC_API_URL` étant inliné au build, l'image front doit être
-reconstruite si l'URL de l'API change.
+> *« On ne juge pas un homme à la durée de son mandat, mais à ce qu'il laisse derrière lui. »*
+>
+> **William Harrington**
+
+---
+
+## Auteur
+
+**Dragent** — Développement et conception du portail administratif.
+
+Projet destiné à un usage roleplay sur serveur RedM. Les références à la mairie de Valentine, à William Harrington et à l'année 1889 appartiennent à l'univers fictionnel du serveur.
+
+**Dépôt :** [github.com/dragent/mairie-valentine](https://github.com/dragent/mairie-valentine)

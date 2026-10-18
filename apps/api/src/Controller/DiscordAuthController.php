@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Security\BrowserSession;
 use App\Security\Discord\DiscordApi;
 use App\Security\Discord\DiscordUserProvisioner;
+use App\Security\Discord\InvalidDiscordIdentity;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Client\OAuth2Client;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -13,6 +15,7 @@ use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpExceptionInterface;
 use Wohali\OAuth2\Client\Provider\DiscordResourceOwner;
@@ -21,9 +24,8 @@ use Wohali\OAuth2\Client\Provider\DiscordResourceOwner;
  * Discord is the only identity provider: the API never stores a password.
  *
  * The browser is sent to /auth/discord, comes back on /auth/discord/check, and
- * is finally redirected to the front-end with a JWT in the URL fragment. A
- * fragment is used rather than a query string because it is not sent to the
- * server and therefore never ends up in access logs.
+ * is redirected to the front-end. The JWT is set as an HttpOnly cookie and is
+ * not put in the URL.
  */
 #[Route('/auth/discord')]
 final class DiscordAuthController extends AbstractController
@@ -36,8 +38,7 @@ final class DiscordAuthController extends AbstractController
         private readonly DiscordUserProvisioner $provisioner,
         private readonly DiscordApi $discordApi,
         private readonly JWTTokenManagerInterface $jwtManager,
-        #[Autowire('%env(FRONTEND_URL)%')]
-        private readonly string $frontendUrl,
+        private readonly BrowserSession $session,
         #[Autowire('%env(DISCORD_GUILD_ID)%')]
         private readonly string $requiredGuildId,
     ) {
@@ -59,22 +60,32 @@ final class DiscordAuthController extends AbstractController
             /** @var DiscordResourceOwner $owner */
             $owner = $client->fetchUserFromToken($accessToken);
         } catch (IdentityProviderException|\RuntimeException) {
-            return $this->backToFrontend(['error' => 'discord_handshake_failed']);
+            return $this->session->reject('discord_handshake_failed');
         }
 
         if ('' !== $this->requiredGuildId) {
             try {
                 if (!$this->discordApi->isGuildMember($accessToken->getToken(), $this->requiredGuildId)) {
-                    return $this->backToFrontend(['error' => 'not_a_guild_member']);
+                    return $this->session->reject('not_a_guild_member');
                 }
             } catch (HttpExceptionInterface) {
-                return $this->backToFrontend(['error' => 'discord_unavailable']);
+                return $this->session->reject('discord_unavailable');
             }
         }
 
-        $user = $this->provisioner->provision($owner);
+        try {
+            $user = $this->provisioner->provision($owner);
+        } catch (InvalidDiscordIdentity) {
+            return $this->session->reject('invalid_discord_account');
+        }
 
-        return $this->backToFrontend(['token' => $this->jwtManager->create($user)]);
+        return $this->session->establish($this->jwtManager->create($user));
+    }
+
+    #[Route('/logout', name: 'auth_logout', methods: ['POST'])]
+    public function logout(): Response
+    {
+        return $this->session->end();
     }
 
     private function discordClient(): OAuth2Client
@@ -82,15 +93,4 @@ final class DiscordAuthController extends AbstractController
         return $this->clientRegistry->getClient('discord');
     }
 
-    /**
-     * @param array<string, string> $fragment
-     */
-    private function backToFrontend(array $fragment): RedirectResponse
-    {
-        return new RedirectResponse(\sprintf(
-            '%s/auth/callback#%s',
-            rtrim($this->frontendUrl, '/'),
-            http_build_query($fragment),
-        ));
-    }
 }

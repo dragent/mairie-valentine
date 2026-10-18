@@ -11,7 +11,9 @@ COPY docker/nginx/wait-for-api.sh /wait-for-api.sh
 RUN chmod +x /wait-for-api.sh
 
 # nginx never executes PHP: it only needs the files to exist for try_files, and
-# to serve the static assets installed by the bundles.
+# to serve the static assets installed by the bundles. Posters are not in this
+# copy — compose.prod.yaml mounts the shared api_uploads volume over
+# public/uploads, which is what PHP writes at runtime.
 COPY --from=api /var/www/html/public/ /var/www/html/public/
 
 ENTRYPOINT ["/bin/sh", "/wait-for-api.sh"]
