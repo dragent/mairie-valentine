@@ -31,39 +31,57 @@ export default function SearchPage() {
           />
         </label>
 
-        <Hits query={query} />
-        {hasRole(ROLE_ELU) && <DecreeHits query={query} />}
+        {hasRole(ROLE_ELU) ? <ElectedHits query={query} /> : <StaffHits query={query} />}
       </div>
     </RequireRole>
   );
 }
 
-function Hits({ query }: { query: string }) {
+function StaffHits({ query }: { query: string }) {
+  const sources = useStaffSources();
+
+  return (
+    <HitList
+      query={query}
+      pending={sources.pending}
+      error={sources.error}
+      hits={searchRegisters(query, { ...sources.items, decrees: [] })}
+    />
+  );
+}
+
+function ElectedHits({ query }: { query: string }) {
+  const sources = useStaffSources();
+  const register = useResource(decrees);
+  const hits = searchRegisters(query, {
+    ...sources.items,
+    decrees: register.items ?? [],
+  });
+
+  return (
+    <HitList
+      query={query}
+      pending={sources.pending || register.items === null}
+      error={sources.error ?? register.error}
+      hits={hits}
+    />
+  );
+}
+
+function useStaffSources() {
   const memos = useResource(notes);
   const events = useResource(municipalEvents);
   const meetings = useResource(appointments);
-  const error = memos.error ?? events.error ?? meetings.error;
-  const pending = memos.items === null || events.items === null || meetings.items === null;
-  const hits = searchRegisters(query, {
-    notes: memos.items ?? [],
-    decrees: [],
-    events: events.items ?? [],
-    appointments: meetings.items ?? [],
-  });
 
-  return <HitList query={query} pending={pending} error={error} hits={hits} />;
-}
-
-function DecreeHits({ query }: { query: string }) {
-  const register = useResource(decrees);
-  const hits = searchRegisters(query, {
-    notes: [],
-    decrees: register.items ?? [],
-    events: [],
-    appointments: [],
-  });
-
-  return <HitList query={query} pending={register.items === null} error={register.error} hits={hits} hideEmpty />;
+  return {
+    pending: memos.items === null || events.items === null || meetings.items === null,
+    error: memos.error ?? events.error ?? meetings.error,
+    items: {
+      notes: memos.items ?? [],
+      events: events.items ?? [],
+      appointments: meetings.items ?? [],
+    },
+  };
 }
 
 function HitList({
@@ -71,19 +89,13 @@ function HitList({
   pending,
   error,
   hits,
-  hideEmpty = false,
 }: {
   query: string;
   pending: boolean;
   error: string | null;
   hits: SearchHit[];
-  hideEmpty?: boolean;
 }) {
   if (query.trim() === "") {
-    return null;
-  }
-
-  if (hideEmpty && !pending && error === null && hits.length === 0) {
     return null;
   }
 
