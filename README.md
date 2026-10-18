@@ -144,6 +144,21 @@ contrôle d'accès est porté par l'entité :
 L'auteur et les dates sont posés par l'API, jamais par le client, et la
 référence d'un décret (`DEC-2026-001`) est attribuée à l'enregistrement.
 
+## Sauvegardes
+
+```bash
+sh apps/api/bin/backup-database.sh
+sh apps/api/bin/restore-database.sh backups/mairie-YYYYMMDDTHHMMSSZ.sql
+```
+
+Le mot de passe reste celui du conteneur `db` ; il n'est pas écrit dans le script.
+Les dumps vont dans `backups/`, qui n'est pas versionné. Après une restauration,
+vérifier les tables :
+
+```bash
+docker compose exec db sh -c 'mysql -N -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW TABLES"'
+```
+
 ## Commandes utiles
 
 ```bash

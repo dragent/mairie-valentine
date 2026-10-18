@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Entity\Decree;
 use App\Entity\MunicipalEvent;
 use App\Service\PublicBoard;
+use App\Service\PublicCatalog;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,8 +25,14 @@ final class PublicBoardController extends AbstractController
         $now = new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris'));
 
         return $this->json([
-            'decrees' => $this->board->decrees($entities->getRepository(Decree::class)->findAll(), $now),
-            'events' => $this->board->events($entities->getRepository(MunicipalEvent::class)->findAll(), $now),
+            'decrees' => $this->board->decrees(
+                $entities->getRepository(Decree::class)->findBy(PublicCatalog::decreeCriteria()),
+                $now,
+            ),
+            'events' => $this->board->events(
+                $entities->getRepository(MunicipalEvent::class)->findBy(PublicCatalog::eventCriteria()),
+                $now,
+            ),
         ]);
     }
 }
