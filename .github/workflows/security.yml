@@ -77,5 +77,4 @@ jobs:
         working-directory: apps/web
         run: npm test
       - name: Dependency audit
-        working-directory: apps/web
-        run: npm audit --omit=dev --audit-level=high
+        run: node scripts/check-npm-audit.mjs
