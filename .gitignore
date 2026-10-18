@@ -1,9 +1,10 @@
 ###> Environment ###
 # Anchored to the repository root: apps/api/.env is a committed template, as
-# per the Symfony convention.
+# per the Symfony convention. Real secrets and key material stay out of Git.
 /.env
 /.env.local
 /.env.*.local
+*.pem
 /backups/
 ###< Environment ###
 

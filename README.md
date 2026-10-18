@@ -144,6 +144,8 @@ openssl rand -hex 32
 
 Ne publiez jamais le fichier `.env`, les jetons du bot ou les clés privées dans le dépôt.
 
+Ces valeurs vivent uniquement dans le `.env` de la machine, ou dans les variables du serveur. `apps/api/.env` et `apps/api/.env.dev` restent des modèles vides. Un `APP_SECRET` a déjà été publié dans l'historique de `.env.dev` : considérez-le comme brûlé, et remplacez-le partout où il aurait été recopié. Supprimer la ligne ne l'efface pas des anciens commits. Les clés JWT (`config/jwt/*.pem`) ne sont pas versionnées ; si une copie a circulé hors du dépôt, régénérez la paire et changez `JWT_PASSPHRASE`. Le frontend ne reçoit que `NEXT_PUBLIC_API_URL`.
+
 ### 3. Démarrer l'application
 
 ```bash

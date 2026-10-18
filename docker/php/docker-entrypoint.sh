@@ -20,6 +20,36 @@ if ! chown www-data:www-data public/uploads public/uploads/events public/uploads
 	fi
 fi
 
+# Production refuses the compose placeholders. The real values come from the server environment.
+if [ "$APP_ENV" = 'prod' ]; then
+	case "${APP_SECRET:-}" in
+		''|change_me_in_env)
+			echo '[entrypoint] APP_SECRET must be set to a unique value.' >&2
+			exit 1
+			;;
+	esac
+	case "${JWT_PASSPHRASE:-}" in
+		''|change_me_in_env)
+			echo '[entrypoint] JWT_PASSPHRASE must be set to a unique value.' >&2
+			exit 1
+			;;
+	esac
+	# Local compose defaults (mairie, root, empty) are refused only in production.
+	# The value itself is never written to the log.
+	case "${DB_PASSWORD:-}" in
+		''|mairie|root|change_me_in_env)
+			echo '[entrypoint] DB_PASSWORD must be set to a unique value.' >&2
+			exit 1
+			;;
+	esac
+	case "${DATABASE_URL:-}" in
+		*://*:mairie@*|*://*:root@*|*://*:change_me_in_env@*|*://*:@*)
+			echo '[entrypoint] The database password in DATABASE_URL must be unique.' >&2
+			exit 1
+			;;
+	esac
+fi
+
 if [ "$APP_ENV" != 'prod' ] && [ ! -f vendor/autoload_runtime.php ]; then
 	echo '[entrypoint] Installing Composer dependencies...'
 	# Bind mounts (Windows especially) leave stale assets:install temp dirs that

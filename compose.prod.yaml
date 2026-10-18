@@ -7,6 +7,9 @@
 services:
   db:
     ports: !reset []
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD to a unique value}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD to a unique value}
 
   api:
     image: mairie-valentine/api:prod
@@ -16,6 +19,9 @@ services:
       APP_ENV: prod
       APP_DEBUG: 0
       XDEBUG_MODE: "off"
+      APP_SECRET: ${APP_SECRET:?set APP_SECRET to a unique value}
+      JWT_PASSPHRASE: ${JWT_PASSPHRASE:?set JWT_PASSPHRASE to a unique value}
+      DATABASE_URL: mysql://${DB_USER:-mairie}:${DB_PASSWORD:?set DB_PASSWORD to a unique value}@db:3306/${DB_NAME:-mairie_valentine}?serverVersion=8.4.0&charset=utf8mb4
     # The warmed cache ships with the image. The JWT keypair has to survive a
     # restart — regenerating it would invalidate every issued token — and so do
     # the posters PHP writes under public/uploads.

@@ -73,6 +73,10 @@ if grep -Eq 'ENV .*(SECRET|TOKEN|PASSWORD|JWT_|DISCORD_|DATABASE_)' docker/web/D
     say "The web image bakes in a server secret"
 fi
 
+if ! grep -q 'APP_SECRET must be set to a unique value' docker/php/docker-entrypoint.sh; then
+    say "Production entrypoint must refuse a missing APP_SECRET"
+fi
+
 if [ "$fail" -ne 0 ]; then
     exit 1
 fi
