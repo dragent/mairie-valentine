@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, type FormEvent } from "react";
 
+import { LoadingSeal } from "@/components/loading-seal";
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner, Field, ResourceForm, Select } from "@/components/resource-table";
 import {
@@ -16,6 +17,7 @@ import {
   type Job,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { formatDateTime } from "@/lib/dates";
 import {
   CITIZEN_VALUE,
   OFFICES,
@@ -23,10 +25,13 @@ import {
   cessionHint,
   cessionWarning,
   filterMembers,
+  lastVisitText,
   memberName,
   officeChoices,
+  registerRow,
   showMemberSearch,
   staffLead,
+  withLastVisits,
 } from "@/lib/personnel";
 import { describe } from "@/lib/use-resource";
 
@@ -39,6 +44,7 @@ export default function StaffPage() {
   const [isBusy, setIsBusy] = useState(false);
   const [successorId, setSuccessorId] = useState("");
   const [query, setQuery] = useState("");
+  const [visits, setVisits] = useState<{ discordId: string; lastLoginAt?: string | null }[]>([]);
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
@@ -49,21 +55,16 @@ export default function StaffPage() {
     let cancelled = false;
     let guildLoaded = false;
 
-    const localStaff = fetchStaff(token).then((staff) =>
-      staff.map((member) => ({
-        discordId: member.discordId,
-        username: member.username,
-        displayName: member.displayName ?? null,
-        avatarUrl: member.avatarUrl ?? null,
-        job: member.job ?? null,
-        jobLabel: member.jobLabel ?? null,
-      })),
-    );
+    const localStaff = fetchStaff(token).then((staff) => staff.map(registerRow));
 
     // The register is already in the database. Show it while Discord answers,
     // instead of waiting for a failure before starting the second request.
     localStaff
       .then((loaded) => {
+        if (!cancelled) {
+          setVisits(loaded.map((member) => ({ discordId: member.discordId, lastLoginAt: member.lastLoginAt })));
+        }
+
         if (!cancelled && !guildLoaded) {
           setMembers(loaded);
         }
@@ -153,7 +154,7 @@ export default function StaffPage() {
   }
 
   const candidates = members?.filter((member) => member.discordId !== user?.discordId) ?? [];
-  const listed = filterMembers(members ?? [], query);
+  const listed = withLastVisits(filterMembers(members ?? [], query), visits);
   const needle = query.trim();
   const signatory = user?.displayName ?? user?.username;
   const signature = user?.jobLabel && signatory ? `${user.jobLabel} — ${signatory}` : signatory;
@@ -188,7 +189,7 @@ export default function StaffPage() {
         <ErrorBanner message={error} />
 
         {members === null && error === null ? (
-          <p className="text-muted">Chargement…</p>
+          <LoadingSeal />
         ) : members === null || members.length === 0 ? (
           <p className="text-sm text-muted">Aucun habitant à afficher.</p>
         ) : (
@@ -256,11 +257,9 @@ export default function StaffPage() {
                                   )}
                                   <span className="min-w-0">
                                     <span className="block truncate font-display text-lg text-heading">{name}</span>
-                                    {member.displayName !== null && member.displayName !== member.username && (
-                                      <span className="block truncate text-xs tracking-wide text-muted">
-                                        {member.username}
-                                      </span>
-                                    )}
+                                    <span className="block truncate text-xs text-muted">
+                                      {lastVisitText(member.lastLoginAt, formatDateTime)}
+                                    </span>
                                   </span>
                                 </span>
 

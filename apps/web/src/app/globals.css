@@ -110,6 +110,10 @@ dialog.calendar-sheet {
   color: var(--foreground);
 }
 
+dialog.calendar-sheet.calendar-sheet-note {
+  width: min(32rem, calc(100vw - 2rem));
+}
+
 dialog.calendar-sheet::backdrop {
   background: rgba(23, 19, 16, 0.72);
 }
@@ -147,4 +151,169 @@ dialog.calendar-sheet::backdrop {
   outline: 1px solid color-mix(in srgb, var(--gold-dark) 80%, transparent);
   outline-offset: -4px;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.loading-book,
+.loading-seal {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 1.75rem;
+  padding-block: 2rem;
+}
+
+.loading-label {
+  font-size: 1.35rem;
+  color: var(--muted);
+}
+
+.loading-book .book {
+  position: relative;
+  width: min(28rem, 100%);
+  aspect-ratio: 16 / 11.25;
+  perspective: 1600px;
+}
+
+.loading-book .book-board,
+.loading-book .book-cover-face {
+  border-radius: 3px 8px 8px 3px;
+  background: linear-gradient(90deg, #140e0b 0 16px, #6b4b32 16px 22px, #3a291c 22px 100%);
+  box-shadow:
+    0 16px 28px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(184, 148, 85, 0.55);
+}
+
+.loading-book .book-board {
+  position: absolute;
+  inset: 0;
+}
+
+.loading-book .book-pages {
+  position: absolute;
+  inset: 0.4rem 0.4rem 0.4rem 0.7rem;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border-radius: 2px 4px 4px 2px;
+  background: linear-gradient(#f8f1dc, #f1e4c8);
+}
+
+.loading-book .book-pages::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 10px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, rgba(40, 24, 12, 0.2), transparent);
+}
+
+.loading-book .book-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  transform-origin: left center;
+  animation: book-open 1.6s cubic-bezier(0.45, 0.05, 0.2, 1) forwards;
+}
+
+.loading-book .book-cover-face {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+}
+
+.loading-book .book-cover-seal {
+  width: 9rem;
+  height: 9rem;
+  object-fit: contain;
+}
+
+.loading-book .page-ink {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 1rem 0.85rem;
+  text-align: center;
+}
+
+.loading-book :is(.page-heading, .page-line) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: none;
+}
+
+.loading-book .page-ink {
+  font-family: var(--font-register), "Bodoni MT", Didot, serif;
+}
+
+.loading-book .page-heading {
+  font-size: 1.05rem;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #4a3424;
+}
+
+.loading-book .page-line {
+  font-size: 1.35rem;
+  font-style: italic;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: #2c1c12;
+}
+
+.loading-seal-mark {
+  width: min(14rem, 70vw);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  animation: seal-press 2.6s ease-in-out infinite;
+}
+
+@keyframes book-open {
+  0%,
+  16% {
+    transform: rotateY(0deg);
+  }
+
+  100% {
+    transform: rotateY(-68deg);
+  }
+}
+
+@keyframes seal-press {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(0.94);
+    opacity: 0.78;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-book .book-cover {
+    animation: none;
+    transform: rotateY(-68deg);
+  }
+
+  .loading-seal-mark {
+    animation: none;
+  }
 }

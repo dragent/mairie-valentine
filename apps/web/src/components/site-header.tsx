@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { ROLE_ELU, ROLE_SECRETAIRE, discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { showsPublicBoard } from "@/lib/public-routes";
 
 /** Staff links, each limited to the given role. */
 const NAV_LINKS = [{ href: "/personnel", label: "Personnel", role: ROLE_ELU }];
@@ -16,21 +17,34 @@ const MAIRIE_LINKS = [
   { href: "/mairie/decrets", label: "Décrets", role: ROLE_ELU },
   { href: "/mairie/evenements", label: "Événements", role: ROLE_SECRETAIRE },
   { href: "/mairie/rendez-vous", label: "Rendez-vous", role: ROLE_SECRETAIRE },
+  { href: "/mairie/citoyens", label: "Citoyens", role: ROLE_SECRETAIRE },
+  { href: "/mairie/journal", label: "Journal", role: ROLE_SECRETAIRE },
+  { href: "/mairie/recherche", label: "Recherche", role: ROLE_SECRETAIRE },
 ];
 
 export function SiteHeader() {
   const { user, isLoading, signOut, hasRole } = useAuth();
+  const pathname = usePathname();
   const links = NAV_LINKS.filter((link) => hasRole(link.role));
   const mairieLinks = MAIRIE_LINKS.filter((link) => hasRole(link.role));
 
   return (
-    <header className="border-b border-line bg-surface">
+    <header className="border-b border-line bg-surface print:hidden">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-6 py-4">
         <Link href="/" className="font-display text-xl text-heading">
           Mairie de Valentine
         </Link>
 
         <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+          {showsPublicBoard(user?.roles ?? []) && (
+            <Link
+              href="/affichage"
+              className="text-muted hover:text-foreground"
+              aria-current={pathname === "/affichage" ? "page" : undefined}
+            >
+              Affichage
+            </Link>
+          )}
           {links.map((link) => (
             <Link key={link.href} href={link.href} className="text-muted hover:text-foreground">
               {link.label}

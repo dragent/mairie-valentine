@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 
+import { LoadingSeal } from "@/components/loading-seal";
 import { useAuth } from "@/lib/auth-context";
 import { isPublicPath } from "@/lib/public-routes";
 
@@ -11,8 +12,8 @@ function subscribe(): () => void {
 }
 
 /**
- * The server cannot see the token in localStorage. Wait until the client has
- * read it before deciding, so a signed-in refresh is not sent home.
+ * The session cookie is not visible during server rendering. Wait until the
+ * client has asked /api/me before deciding, so a signed-in refresh is not sent home.
  */
 function useHasMounted(): boolean {
   return useSyncExternalStore(subscribe, () => true, () => false);
@@ -36,5 +37,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return children;
   }
 
-  return <p className="text-muted">Chargement…</p>;
+  return <LoadingSeal />;
 }

@@ -26,12 +26,13 @@ type ApiFetchOptions = RequestInit & { token?: string | null };
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): Promise<T> {
   const { token, headers, ...init } = options;
+  void token;
 
   const response = await fetch(`${apiBaseUrl()}${path}`, {
     ...init,
+    credentials: "include",
     headers: {
       Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
   });
@@ -90,8 +91,37 @@ export type CurrentUser = {
   lastLoginAt: string | null;
 };
 
-export function fetchCurrentUser(token: string): Promise<CurrentUser> {
-  return apiFetch<CurrentUser>("/api/me", { token, cache: "no-store" });
+export function fetchCurrentUser(): Promise<CurrentUser> {
+  return apiFetch<CurrentUser>("/api/me", { cache: "no-store" });
+}
+
+export function endSession(): Promise<void> {
+  return apiFetch<void>("/auth/discord/logout", { method: "POST" });
+}
+
+export type PublicDecree = {
+  reference: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  posterPath?: string | null;
+};
+
+export type PublicEvent = {
+  title: string;
+  startsAt: string;
+  endsAt?: string | null;
+  location?: string | null;
+  posterPath?: string | null;
+};
+
+export type PublicBoard = {
+  decrees: PublicDecree[];
+  events: PublicEvent[];
+};
+
+export function fetchPublicBoard(): Promise<PublicBoard> {
+  return apiFetch<PublicBoard>("/api/public/board", { cache: "no-store" });
 }
 
 /**

@@ -12,7 +12,7 @@ services:
       MYSQL_USER: ${DB_USER:-mairie}
       MYSQL_PASSWORD: ${DB_PASSWORD:-mairie}
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -111,7 +111,7 @@ services:
       ADMINER_DEFAULT_SERVER: db
       ADMINER_DESIGN: dracula
     ports:
-      - "${ADMINER_PORT:-8081}:8080"
+      - "127.0.0.1:${ADMINER_PORT:-8081}:8080"
     restart: unless-stopped
 
 volumes:

@@ -4,12 +4,15 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { CalendarSheetDialog } from "@/components/calendar-sheet";
+import { LoadingSeal } from "@/components/loading-seal";
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner } from "@/components/resource-table";
 import { ROLE_ELU, ROLE_SECRETAIRE, appointments, decrees, municipalEvents, type Decree } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { calendarSheet } from "@/lib/calendar-sheet";
 import { buildMonth, countByKind, filterByKind, townLayoutYear, townToday, type CalendarEntry } from "@/lib/calendar";
+import { daySheet } from "@/lib/day-sheet";
+import { knownLocations } from "@/lib/known-locations";
 import { scheduleConflicts } from "@/lib/schedule-conflicts";
 import { describe, useResource } from "@/lib/use-resource";
 
@@ -60,6 +63,17 @@ export default function CalendarPage() {
   const cells = filterByKind(month, shown);
   const counts = countByKind(month);
   const conflicts = scheduleConflicts(meetings.items ?? [], events.items ?? []);
+  const sheetLines = daySheet(meetings.items ?? [], events.items ?? []);
+  const sheetDate = today.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const places = knownLocations([
+    ...(events.items ?? []).map((municipalEvent) => municipalEvent.location),
+    ...(meetings.items ?? []).map((appointment) => appointment.location),
+  ]);
   const sheet = opened === null ? null : calendarSheet(opened, events.items ?? [], meetings.items ?? [], register.items ?? []);
   const message =
     [events.error, meetings.error, register.error].filter((error) => error !== null).join(" ") || null;
@@ -80,7 +94,7 @@ export default function CalendarPage() {
 
   return (
     <RequireRole role={ROLE_SECRETAIRE}>
-      <section className="ledger-frame bg-surface px-8 py-8 sm:px-10">
+      <section className="ledger-frame bg-surface px-8 py-8 sm:px-10 print:hidden">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
           <Image
             src="/sceau-mairie.png"
@@ -118,6 +132,9 @@ export default function CalendarPage() {
                 <button type="button" onClick={() => move(1)} className="hover:text-foreground">
                   Mois suivant
                 </button>
+                <button type="button" onClick={() => window.print()} className="hover:text-foreground">
+                  Imprimer la feuille du jour
+                </button>
               </div>
             </div>
 
@@ -132,7 +149,7 @@ export default function CalendarPage() {
               )}
 
               {pending ? (
-                <p className="text-muted">Chargement…</p>
+                <LoadingSeal />
               ) : (
                 <div className="grid grid-cols-7 border border-line">
                   {WEEKDAYS.map((weekday, index) => (
@@ -199,8 +216,26 @@ export default function CalendarPage() {
           </aside>
         </div>
       </section>
+      <section className="hidden print:block">
+        <h1 className="font-display text-3xl text-heading">Feuille du jour</h1>
+        <p className="mt-2 capitalize">{sheetDate}</p>
+        {sheetLines.length === 0 ? (
+          <p className="mt-6">Rien au guichet aujourd&apos;hui.</p>
+        ) : (
+          <ul className="mt-6 space-y-3">
+            {sheetLines.map((line) => (
+              <li key={line.id}>
+                <span>{line.time}</span>
+                <span> — {line.label}</span>
+                <span> — {line.place}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <CalendarSheetDialog
         sheet={sheet}
+        locations={places}
         onClose={() => setOpened(null)}
         onChanged={() => {
           events.reload();

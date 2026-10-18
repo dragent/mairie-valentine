@@ -5,11 +5,12 @@ import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "rea
 
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner, Field, ResourceForm, Select, TextArea, TextInput } from "@/components/resource-table";
-import { DECREE_STATUS_LABELS, ROLE_ELU, type DecreeStatus } from "@/lib/api";
+import { DECREE_STATUS_LABELS, ROLE_ELU, decrees, type DecreeStatus } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { decreeDeadlines } from "@/lib/decree-deadlines";
 import { decreeSubmission, recordDecree, type DecreeForm } from "@/lib/decree";
 import { posterRejection } from "@/lib/event-poster";
-import { describe } from "@/lib/use-resource";
+import { describe, useResource } from "@/lib/use-resource";
 
 const EMPTY_FORM: DecreeForm = {
   title: "",
@@ -21,6 +22,8 @@ const EMPTY_FORM: DecreeForm = {
 
 export default function DecreesPage() {
   const { token, user } = useAuth();
+  const register = useResource(decrees);
+  const ending = decreeDeadlines(register.items ?? []);
   const [form, setForm] = useState(EMPTY_FORM);
   const [poster, setPoster] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -104,6 +107,7 @@ export default function DecreesPage() {
 
     try {
       const created = await recordDecree(token, submission.input, poster);
+      register.reload();
       setForm(EMPTY_FORM);
       choosePoster(null);
       setPosterKey((key) => key + 1);
@@ -148,8 +152,22 @@ export default function DecreesPage() {
         <Ornament />
 
         <div className="space-y-8">
-          <ErrorBanner message={error} />
+          <ErrorBanner message={error ?? register.error} />
           {notice !== null && <p className="text-sm text-accent">{notice}</p>}
+
+          {ending.length > 0 && (
+            <section>
+              <h2 className="font-display text-2xl text-heading">Échéances</h2>
+              <ul className="mt-2 divide-y divide-line">
+                {ending.map((line) => (
+                  <li key={line.id} className="py-4">
+                    <p className="font-display text-lg text-heading">{line.label}</p>
+                    <p className="text-sm text-muted">{line.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <ResourceForm
             className=""
