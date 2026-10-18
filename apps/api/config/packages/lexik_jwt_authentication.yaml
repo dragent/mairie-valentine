@@ -1,8 +1,46 @@
+parameters:
+    app.session_cookie.secure: false
+    app.session_cookie.samesite: lax
+
 lexik_jwt_authentication:
     secret_key: '%env(resolve:JWT_SECRET_KEY)%'
     public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
     pass_phrase: '%env(JWT_PASSPHRASE)%'
     token_ttl: '%env(int:JWT_TOKEN_TTL)%'
+    # A token without exp would stay valid forever. RS256 rejects HMAC/"none" confusion.
+    allow_no_expiration: false
+    encoder:
+        signature_algorithm: RS256
+    # The browser sends the HttpOnly session cookie. A Bearer header remains
+    # available to non-browser clients. The query string is never accepted:
+    # it would land in access logs.
+    token_extractors:
+        authorization_header:
+            enabled: true
+            prefix: Bearer
+            name: Authorization
+        cookie:
+            enabled: true
+            name: mairie_session
+        query_parameter:
+            enabled: false
+    set_cookies:
+        mairie_session:
+            samesite: '%app.session_cookie.samesite%'
+            path: /
+            secure: '%app.session_cookie.secure%'
+            httpOnly: true
     # Users are identified by their immutable Discord snowflake, not their
-    # username, which they can change at any time.
+    # username, which they can change at any time. Roles are not read from the
+    # token: the account is reloaded from the database.
     user_id_claim: discordId
+
+when@prod:
+    parameters:
+        app.session_cookie.secure: true
+        app.session_cookie.samesite: none
+    lexik_jwt_authentication:
+        set_cookies:
+            mairie_session:
+                samesite: none
+                secure: true

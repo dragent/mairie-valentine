@@ -12,8 +12,8 @@ function subscribe(): () => void {
 }
 
 /**
- * The server cannot see the token in localStorage. Wait until the client has
- * read it before deciding, so a signed-in refresh is not sent home.
+ * The session cookie is not visible during server rendering. Wait until the
+ * client has asked /api/me before deciding, so a signed-in refresh is not sent home.
  */
 function useHasMounted(): boolean {
   return useSyncExternalStore(subscribe, () => true, () => false);

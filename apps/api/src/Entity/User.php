@@ -101,6 +101,15 @@ class User implements UserInterface
     #[Groups(['user:read'])]
     private ?Job $job = null;
 
+    /**
+     * A configured Discord sync that fails keeps the stored position in the
+     * register but stops it from granting roles. The next successful sync, or
+     * an explicit local assignment, confirms it again. Existing rows stay
+     * confirmed until such a failure is observed.
+     */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $jobConfirmed = true;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
@@ -183,9 +192,26 @@ class User implements UserInterface
      */
     public function getRoles(): array
     {
-        $jobRoles = $this->job?->roles() ?? [];
+        $extra = $this->roles;
+        if (!$this->jobConfirmed) {
+            $extra = array_values(array_filter(
+                $extra,
+                static fn (string $role): bool => !\in_array($role, [self::ROLE_MAIRE, self::ROLE_ELU, self::ROLE_SECRETAIRE], true),
+            ));
+        }
 
-        return array_values(array_unique([...$this->roles, ...$jobRoles, self::ROLE_USER]));
+        $jobRoles = $this->jobConfirmed ? ($this->job?->roles() ?? []) : [];
+
+        return array_values(array_unique([...$extra, ...$jobRoles, self::ROLE_USER]));
+    }
+
+    /**
+     * Drops Discord-derived privileges after a sync failure. ROLE_ADMIN, which
+     * no Discord position grants, stays. The stored job itself is kept.
+     */
+    public function suspendDiscordPrivileges(): void
+    {
+        $this->jobConfirmed = false;
     }
 
     /**
@@ -206,6 +232,7 @@ class User implements UserInterface
     public function setJob(?Job $job): self
     {
         $this->job = $job;
+        $this->jobConfirmed = true;
         // A hand-filled role must not resurrect a position once it is recorded
         // or withdrawn. ROLE_ADMIN is the only extra role that stays.
         $this->roles = array_values(array_filter(

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Libre_Bodoni, Rye } from "next/font/google";
+import { headers } from "next/headers";
 
 import { AuthGate } from "@/components/auth-gate";
 import { SiteFooter } from "@/components/site-footer";
@@ -40,10 +41,13 @@ export const metadata: Metadata = {
     "Services administratifs de la ville de Valentine : registre des citoyens, documents officiels et arrêtés municipaux.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="fr"
+      nonce={nonce}
       className={`${geistSans.variable} ${geistMono.variable} ${rye.variable} ${register.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
