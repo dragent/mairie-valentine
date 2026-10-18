@@ -38,9 +38,3 @@ lexik_jwt_authentication:
 when@prod:
     parameters:
         app.session_cookie.secure: true
-        app.session_cookie.samesite: none
-    lexik_jwt_authentication:
-        set_cookies:
-            mairie_session:
-                samesite: none
-                secure: true
