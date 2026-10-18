@@ -35,6 +35,9 @@ final class AccessPolicyTest extends TestCase
             $rules[$rule['path']] = $rule['roles'];
         }
 
+        self::assertSame(['ROLE_MAIRE'], $config['security']['role_hierarchy']['ROLE_ADMIN']);
+        self::assertStringNotContainsString('ROLE_ALLOWED_TO_SWITCH', (string) file_get_contents(dirname(__DIR__, 2).'/config/packages/security.yaml'));
+
         self::assertSame([
             '^/auth/discord' => 'PUBLIC_ACCESS',
             '^/health$' => 'PUBLIC_ACCESS',
