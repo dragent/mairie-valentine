@@ -43,8 +43,12 @@ if ! grep -qxF "APP_SECRET='\$ecretf0rt3st'" apps/api/.env.test; then
     say "apps/api/.env.test must keep the known test dummy, not a real secret"
 fi
 
+# The marker is built at runtime. A literal PEM header in this file would make
+# a clean tree fail the scan.
+pem_header=$(printf '%s%s%s' 'BEGIN ' 'PRIVATE ' 'KEY')
+rsa_header=$(printf '%s%s%s%s' 'BEGIN ' 'RSA ' 'PRIVATE ' 'KEY')
 set +e
-git grep -I -n -e "BEGIN PRIVATE KEY" -e "BEGIN RSA PRIVATE KEY" -- . ':!apps/api/config/reference.php' >/dev/null 2>&1
+git grep -I -n -F -e "$pem_header" -e "$rsa_header" -- . ':!apps/api/config/reference.php' ':!scripts/check-secrets.sh' >/dev/null 2>&1
 git_grep_status=$?
 set -e
 if [ "$git_grep_status" -eq 0 ]; then
