@@ -23,6 +23,20 @@ if [ "$APP_ENV" = 'prod' ]; then
 			exit 1
 			;;
 	esac
+	# Local compose defaults (mairie, root, empty) are refused only in production.
+	# The value itself is never written to the log.
+	case "${DB_PASSWORD:-}" in
+		''|mairie|root|change_me_in_env)
+			echo '[entrypoint] DB_PASSWORD must be set to a unique value.' >&2
+			exit 1
+			;;
+	esac
+	case "${DATABASE_URL:-}" in
+		*://*:mairie@*|*://*:root@*|*://*:change_me_in_env@*|*://*:@*)
+			echo '[entrypoint] The database password in DATABASE_URL must be unique.' >&2
+			exit 1
+			;;
+	esac
 fi
 
 if [ "$APP_ENV" != 'prod' ] && [ ! -f vendor/autoload_runtime.php ]; then
