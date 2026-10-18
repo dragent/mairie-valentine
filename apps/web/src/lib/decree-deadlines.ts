@@ -32,7 +32,7 @@ export function decreeDeadlines(decrees: DatedDecree[], now = new Date()): Decre
       return [{ id: decree.id, label: `${decree.reference} — ${decree.title}`, detail: phrase(end, today), end }];
     })
     .sort((left, right) => left.end.localeCompare(right.end))
-    .map(({ end: _end, ...line }) => line);
+    .map(({ id, label, detail }) => ({ id, label, detail }));
 }
 
 function phrase(end: string, today: string): string {
