@@ -6,11 +6,12 @@ import { useState, type FormEvent } from "react";
 import { CitizenNameField } from "@/components/citizen-name-field";
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner, Field, ResourceForm, TextArea, TextInput } from "@/components/resource-table";
-import { ROLE_SECRETAIRE, appointments, type AppointmentStatus } from "@/lib/api";
+import { ROLE_SECRETAIRE, appointments, municipalEvents, type AppointmentStatus } from "@/lib/api";
 import { appointmentsToClose } from "@/lib/appointments-to-close";
 import { citizenSuggestions } from "@/lib/citizen-register";
 import { useAuth } from "@/lib/auth-context";
 import { formatDateTime, toApiDate } from "@/lib/dates";
+import { knownLocations } from "@/lib/known-locations";
 import { describe, useResource } from "@/lib/use-resource";
 
 const EMPTY_FORM = {
@@ -25,6 +26,11 @@ const EMPTY_FORM = {
 export default function AppointmentsPage() {
   const { token, user } = useAuth();
   const register = useResource(appointments);
+  const events = useResource(municipalEvents);
+  const places = knownLocations([
+    ...(register.items ?? []).map((appointment) => appointment.location),
+    ...(events.items ?? []).map((municipalEvent) => municipalEvent.location),
+  ]);
   const [form, setForm] = useState(EMPTY_FORM);
   const suggestions = citizenSuggestions(register.items ?? [], form.citizenName);
   const [error, setError] = useState<string | null>(null);
@@ -198,9 +204,15 @@ export default function AppointmentsPage() {
             <Field label="Lieu">
               <TextInput
                 maxLength={180}
+                list="known-locations"
                 value={form.location}
                 onChange={(event) => setForm({ ...form, location: event.target.value })}
               />
+              <datalist id="known-locations">
+                {places.map((place) => (
+                  <option key={place} value={place} />
+                ))}
+              </datalist>
             </Field>
 
             <Field label="Notes" wide>

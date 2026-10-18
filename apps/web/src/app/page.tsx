@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 
 import { DailyBriefing } from "@/components/daily-briefing";
+import { LoadingBook } from "@/components/loading-book";
 import { StaffNotes } from "@/components/staff-notes";
 import { ROLE_SECRETAIRE } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -12,7 +13,7 @@ export default function HomePage() {
   const { user, isLoading, hasRole } = useAuth();
 
   if (isLoading) {
-    return <p className="text-muted">…</p>;
+    return <LoadingBook />;
   }
 
   if (!user) {
@@ -112,3 +113,4 @@ function Ornament() {
     </div>
   );
 }
+

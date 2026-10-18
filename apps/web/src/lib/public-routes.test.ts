@@ -12,6 +12,11 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/auth/callback/")).toBe(true);
   });
 
+  it("keeps the public board open to visitors", () => {
+    expect(isPublicPath("/affichage")).toBe(true);
+    expect(isPublicPath("/affichage/")).toBe(true);
+  });
+
   it("closes every other page to visitors", () => {
     expect(isPublicPath("/personnel")).toBe(false);
     expect(isPublicPath("/mairie")).toBe(false);

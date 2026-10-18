@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { Fold } from "@/components/fold";
+import { LoadingSeal } from "@/components/loading-seal";
 import {
   ErrorBanner,
   Field,
@@ -137,7 +138,7 @@ function NoteFolio({
       )}
 
       {folio === null ? (
-        <p className={title ? "mt-4 text-muted" : "text-muted"}>Chargement…</p>
+        <LoadingSeal className={title ? "mt-4" : ""} />
       ) : folio.length === 0 ? (
         <p className={title ? "mt-4 text-sm text-muted" : "text-sm text-muted"}>{empty}</p>
       ) : (
