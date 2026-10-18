@@ -12,14 +12,6 @@ const waived = new Map([
     'GHSA-vfj7-8cjw-p6xm',
     'braces <=3.0.3 has no patched release (latest is still 3.0.3). It is only reached from eslint-config-next while linting globs. npm offers eslint-config-next 14 as the fix, which cannot lint Next.js 16.',
   ],
-  [
-    'GHSA-5gmw-xhrv-c9v3',
-    'tinypool prototype pollution in worker options. vitest 3.2.7 requires tinypool ^1.1.1; the patch is tinypool >=2.1.2 and npm fixes it by moving to vitest 5. Both are major upgrades, and the package is only loaded by the test runner.',
-  ],
-  [
-    'GHSA-85c8-ppgw-ccpr',
-    'Same tinypool worker-option issue as GHSA-5gmw-xhrv-c9v3. Same major-upgrade boundary, same dev-only reachability.',
-  ],
 ]);
 
 const blocking = new Set(['high', 'critical']);
