@@ -27,6 +27,10 @@ final class DatabaseBackupTest extends TestCase
             self::assertStringContainsString('password="s3cret-value"', $plan['defaultsContents']);
             self::assertStringEndsWith('.sql', $plan['dumpFile']);
             self::assertFileExists($plan['defaultsFile']);
+            self::assertSame(0600, fileperms($plan['defaultsFile']) & 0777);
+
+            (new DatabaseBackup())->discard($plan['defaultsFile']);
+            self::assertFileDoesNotExist($plan['defaultsFile']);
         } finally {
             $this->removeDirectory($directory);
         }
@@ -47,11 +51,15 @@ final class DatabaseBackupTest extends TestCase
 
     public function testTheOperatorScriptDoesNotEmbedAPassword(): void
     {
-        $script = (string) file_get_contents(dirname(__DIR__, 2).'/bin/backup-database.sh');
+        foreach (['backup-database.sh', 'restore-database.sh'] as $name) {
+            $script = (string) file_get_contents(dirname(__DIR__, 2).'/bin/'.$name);
 
-        self::assertStringContainsString('MYSQL_USER', $script);
-        self::assertStringContainsString('MYSQL_DATABASE', $script);
-        self::assertDoesNotMatchRegularExpression('/password\s*=\s*[\'"][^\'"]+[\'"]/i', $script);
+            self::assertStringContainsString('--defaults-extra-file', $script, $name);
+            self::assertStringContainsString('trap ', $script, $name);
+            self::assertStringContainsString('umask 077', $script, $name);
+            self::assertDoesNotMatchRegularExpression('/-p[\'"$]/', $script, $name);
+            self::assertDoesNotMatchRegularExpression('/password\s*=\s*[\'"][^\'"$]+[\'"]/i', $script, $name);
+        }
     }
 
     private function removeDirectory(string $directory): void

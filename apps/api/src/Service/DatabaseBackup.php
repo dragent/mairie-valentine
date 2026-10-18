@@ -55,4 +55,15 @@ final class DatabaseBackup
             'dumpFile' => $dumpFile,
         ];
     }
+
+    /**
+     * Removes the defaults file. Call this once the dump has finished, including
+     * when the dump command failed.
+     */
+    public function discard(string $defaultsFile): void
+    {
+        if (is_file($defaultsFile)) {
+            unlink($defaultsFile);
+        }
+    }
 }
