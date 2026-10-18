@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 
+import { LoadingSeal } from "@/components/loading-seal";
 import { useAuth } from "@/lib/auth-context";
 import { useLocationHash } from "@/lib/use-location-hash";
 
@@ -38,10 +39,14 @@ export default function AuthCallbackPage() {
       ? null
       : (ERROR_MESSAGES[params.get("error") ?? DEFAULT_ERROR] ?? ERROR_MESSAGES[DEFAULT_ERROR]);
 
+  if (error === null) {
+    return <LoadingSeal label="Vérification de votre identité…" />;
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="font-display text-2xl text-heading">Connexion</h1>
-      <p className="text-muted">{error ?? "Vérification de votre identité…"}</p>
+      <p className="text-muted">{error}</p>
     </div>
   );
 }
