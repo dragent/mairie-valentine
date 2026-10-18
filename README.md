@@ -169,3 +169,9 @@ images (tags `:prod`, distincts des images de développement). Penser à mettre
 `FRONTEND_URL` avec les vrais domaines et à restreindre `CORS_ALLOW_ORIGIN`.
 `NEXT_PUBLIC_API_URL` étant inliné au build, l'image front doit être
 reconstruite si l'URL de l'API change.
+
+Les affiches d'événements et de décrets sont écrites par PHP dans
+`public/uploads` et servies par Nginx. En production ce répertoire est le
+volume `api_uploads`, monté dans les deux conteneurs : une affiche déposée
+reste visible après un redémarrage ou un rebuild. Ne pas supprimer ce volume
+(ni `api_jwt`) avec `docker compose down -v`.
