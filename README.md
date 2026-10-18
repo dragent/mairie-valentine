@@ -231,6 +231,19 @@ La variable `NEXT_PUBLIC_API_URL` étant intégrée au frontend lors du build, t
 
 Les affiches d'événements et de décrets sont écrites par PHP dans `public/uploads` et servies par Nginx. En production, ce répertoire correspond au volume `api_uploads`, monté dans les deux conteneurs : une affiche déposée reste visible après un redémarrage ou une reconstruction. Ne supprimez pas ce volume, ni `api_jwt`, avec `docker compose down -v`.
 
+## Sauvegardes
+
+```bash
+sh apps/api/bin/backup-database.sh
+sh apps/api/bin/restore-database.sh backups/mairie-YYYYMMDDTHHMMSSZ.sql
+```
+
+Le mot de passe reste celui du conteneur `db` ; il n'est pas écrit dans le script. Les dumps vont dans `backups/`, qui n'est pas versionné. Après une restauration, vérifier les tables :
+
+```bash
+docker compose exec db sh -c 'mysql -N -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SHOW TABLES"'
+```
+
 ## Philosophie du projet
 
 La mairie n'est pas seulement un bâtiment, un titre ou un bureau. Elle est le point de rencontre entre les institutions, les entreprises et les citoyens.

@@ -42,6 +42,7 @@ final class PublicBoardTest extends TestCase
 
         self::assertSame(['Conseil', 'Foire'], array_column($posted, 'title'));
         self::assertSame('Salle', $posted[0]['location']);
+        self::assertArrayNotHasKey('description', $posted[0]);
     }
 
     private function decree(
