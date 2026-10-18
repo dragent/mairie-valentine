@@ -74,8 +74,10 @@ final readonly class DiscordUserProvisioner
         try {
             $member = $this->discordApi->fetchGuildMember($this->guildId, $user->getDiscordId());
         } catch (HttpExceptionInterface|DiscordApiException) {
-            // Discord is unreachable: keep the last known name and position
-            // rather than locking the whole town hall out of its own workspace.
+            // Discord is unreachable. The register keeps the last position and
+            // the last nickname, but that position must not authorize anything
+            // until a later sync succeeds. ROLE_ADMIN is unaffected.
+            $user->suspendDiscordPrivileges();
             if (null === $user->getDisplayName()) {
                 $user->setDisplayName($globalName);
             }
