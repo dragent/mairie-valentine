@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { ROLE_ELU, ROLE_SECRETAIRE, discordLoginUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { showsPublicBoard } from "@/lib/public-routes";
 
 /** Staff links, each limited to the given role. */
 const NAV_LINKS = [{ href: "/personnel", label: "Personnel", role: ROLE_ELU }];
@@ -34,13 +35,15 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-          <Link
-            href="/affichage"
-            className="text-muted hover:text-foreground"
-            aria-current={pathname === "/affichage" ? "page" : undefined}
-          >
-            Affichage
-          </Link>
+          {showsPublicBoard(user?.roles ?? []) && (
+            <Link
+              href="/affichage"
+              className="text-muted hover:text-foreground"
+              aria-current={pathname === "/affichage" ? "page" : undefined}
+            >
+              Affichage
+            </Link>
+          )}
           {links.map((link) => (
             <Link key={link.href} href={link.href} className="text-muted hover:text-foreground">
               {link.label}
