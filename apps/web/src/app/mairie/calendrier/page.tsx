@@ -4,12 +4,14 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { CalendarSheetDialog } from "@/components/calendar-sheet";
+import { LoadingSeal } from "@/components/loading-seal";
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner } from "@/components/resource-table";
 import { ROLE_ELU, ROLE_SECRETAIRE, appointments, decrees, municipalEvents, type Decree } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { calendarSheet } from "@/lib/calendar-sheet";
 import { buildMonth, countByKind, filterByKind, townLayoutYear, townToday, type CalendarEntry } from "@/lib/calendar";
+import { knownLocations } from "@/lib/known-locations";
 import { describe, useResource } from "@/lib/use-resource";
 
 const WEEKDAYS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
@@ -58,6 +60,10 @@ export default function CalendarPage() {
   );
   const cells = filterByKind(month, shown);
   const counts = countByKind(month);
+  const places = knownLocations([
+    ...(events.items ?? []).map((municipalEvent) => municipalEvent.location),
+    ...(meetings.items ?? []).map((appointment) => appointment.location),
+  ]);
   const sheet = opened === null ? null : calendarSheet(opened, events.items ?? [], meetings.items ?? [], register.items ?? []);
   const message =
     [events.error, meetings.error, register.error].filter((error) => error !== null).join(" ") || null;
@@ -123,7 +129,7 @@ export default function CalendarPage() {
               <ErrorBanner message={message} />
 
               {pending ? (
-                <p className="text-muted">Chargement…</p>
+                <LoadingSeal />
               ) : (
                 <div className="grid grid-cols-7 border border-line">
                   {WEEKDAYS.map((weekday, index) => (
@@ -192,6 +198,7 @@ export default function CalendarPage() {
       </section>
       <CalendarSheetDialog
         sheet={sheet}
+        locations={places}
         onClose={() => setOpened(null)}
         onChanged={() => {
           events.reload();

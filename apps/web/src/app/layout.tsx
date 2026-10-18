@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Rye } from "next/font/google";
+import { Geist, Geist_Mono, Libre_Bodoni, Rye } from "next/font/google";
 
 import { AuthGate } from "@/components/auth-gate";
 import { SiteFooter } from "@/components/site-footer";
@@ -24,6 +24,13 @@ const rye = Rye({
   subsets: ["latin"],
 });
 
+const register = Libre_Bodoni({
+  variable: "--font-register",
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: {
     default: "Mairie de Valentine",
@@ -37,7 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} ${rye.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${rye.variable} ${register.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <AuthProvider>

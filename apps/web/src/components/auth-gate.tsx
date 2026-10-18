@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 
+import { LoadingSeal } from "@/components/loading-seal";
 import { useAuth } from "@/lib/auth-context";
 import { isPublicPath } from "@/lib/public-routes";
 
@@ -36,5 +37,5 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return children;
   }
 
-  return <p className="text-muted">Chargement…</p>;
+  return <LoadingSeal />;
 }

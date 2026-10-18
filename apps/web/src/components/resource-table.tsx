@@ -2,6 +2,8 @@
 
 import type { FormEvent, ReactNode } from "react";
 
+import { LoadingSeal } from "@/components/loading-seal";
+
 const INPUT_CLASS =
   "w-full rounded-md border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent";
 
@@ -44,7 +46,7 @@ export function ResourceTable({
   children: ReactNode;
 }) {
   if (isLoading) {
-    return <p className="text-muted">Chargement…</p>;
+    return <LoadingSeal />;
   }
 
   if (isEmpty) {

@@ -29,10 +29,12 @@ const DANGER_BUTTON =
 
 export function CalendarSheetDialog({
   sheet,
+  locations = [],
   onClose,
   onChanged,
 }: {
   sheet: CalendarSheet | null;
+  locations?: string[];
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -74,7 +76,13 @@ export function CalendarSheetDialog({
       }}
     >
       {sheet !== null && (
-        <SheetBody key={`${sheet.kind}-${sheet.recordId}`} sheet={sheet} onClose={close} onChanged={onChanged} />
+        <SheetBody
+          key={`${sheet.kind}-${sheet.recordId}`}
+          sheet={sheet}
+          locations={locations}
+          onClose={close}
+          onChanged={onChanged}
+        />
       )}
     </dialog>
   );
@@ -82,10 +90,12 @@ export function CalendarSheetDialog({
 
 function SheetBody({
   sheet,
+  locations,
   onClose,
   onChanged,
 }: {
   sheet: CalendarSheet;
+  locations: string[];
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -137,6 +147,7 @@ function SheetBody({
         {editing ? (
           <SheetEditor
             sheet={sheet}
+            locations={locations}
             isBusy={isBusy}
             onCancel={() => {
               setEditing(false);
@@ -219,22 +230,38 @@ function Poster({ posterUrl, title }: { posterUrl: string | null; title: string 
 
 function SheetEditor({
   sheet,
+  locations,
   isBusy,
   onCancel,
   onSave,
 }: {
   sheet: CalendarSheet;
+  locations: string[];
   isBusy: boolean;
   onCancel: () => void;
   onSave: (save: () => Promise<string | null>) => Promise<void>;
 }) {
   if (sheet.kind === "event") {
-    return <EventEditor record={sheet.record as MunicipalEvent} isBusy={isBusy} onCancel={onCancel} onSave={onSave} />;
+    return (
+      <EventEditor
+        record={sheet.record as MunicipalEvent}
+        locations={locations}
+        isBusy={isBusy}
+        onCancel={onCancel}
+        onSave={onSave}
+      />
+    );
   }
 
   if (sheet.kind === "appointment") {
     return (
-      <AppointmentEditor record={sheet.record as Appointment} isBusy={isBusy} onCancel={onCancel} onSave={onSave} />
+      <AppointmentEditor
+        record={sheet.record as Appointment}
+        locations={locations}
+        isBusy={isBusy}
+        onCancel={onCancel}
+        onSave={onSave}
+      />
     );
   }
 
@@ -243,11 +270,13 @@ function SheetEditor({
 
 function EventEditor({
   record,
+  locations,
   isBusy,
   onCancel,
   onSave,
 }: {
   record: MunicipalEvent;
+  locations: string[];
   isBusy: boolean;
   onCancel: () => void;
   onSave: (save: () => Promise<string | null>) => Promise<void>;
@@ -306,7 +335,11 @@ function EventEditor({
         <span className="text-xs text-muted">Sans date de fin, l&apos;événement tient sur un seul jour.</span>
       </Field>
       <Field label="Lieu">
-        <TextInput maxLength={180} value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
+        <LocationInput
+          value={form.location}
+          locations={locations}
+          onChange={(location) => setForm({ ...form, location })}
+        />
       </Field>
       <Field label="Description">
         <TextArea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
@@ -318,11 +351,13 @@ function EventEditor({
 
 function AppointmentEditor({
   record,
+  locations,
   isBusy,
   onCancel,
   onSave,
 }: {
   record: Appointment;
+  locations: string[];
   isBusy: boolean;
   onCancel: () => void;
   onSave: (save: () => Promise<string | null>) => Promise<void>;
@@ -398,7 +433,11 @@ function AppointmentEditor({
         />
       </Field>
       <Field label="Lieu">
-        <TextInput maxLength={180} value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
+        <LocationInput
+          value={form.location}
+          locations={locations}
+          onChange={(location) => setForm({ ...form, location })}
+        />
       </Field>
       <Field label="État">
         <Select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as AppointmentStatus })}>
@@ -479,6 +518,32 @@ function DecreeEditor({
       </Field>
       <EditorActions isBusy={isBusy} onCancel={onCancel} />
     </form>
+  );
+}
+
+function LocationInput({
+  value,
+  locations,
+  onChange,
+}: {
+  value: string;
+  locations: string[];
+  onChange: (location: string) => void;
+}) {
+  return (
+    <>
+      <TextInput
+        maxLength={180}
+        list="known-locations"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <datalist id="known-locations">
+        {locations.map((place) => (
+          <option key={place} value={place} />
+        ))}
+      </datalist>
+    </>
   );
 }
 

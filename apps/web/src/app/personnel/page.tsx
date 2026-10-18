@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, type FormEvent } from "react";
 
+import { LoadingSeal } from "@/components/loading-seal";
 import { RequireRole } from "@/components/require-role";
 import { ErrorBanner, Field, ResourceForm, Select } from "@/components/resource-table";
 import {
@@ -188,7 +189,7 @@ export default function StaffPage() {
         <ErrorBanner message={error} />
 
         {members === null && error === null ? (
-          <p className="text-muted">Chargement…</p>
+          <LoadingSeal />
         ) : members === null || members.length === 0 ? (
           <p className="text-sm text-muted">Aucun habitant à afficher.</p>
         ) : (
