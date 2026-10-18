@@ -1,4 +1,5 @@
-# Production overlay. Sources are baked into the images, nothing is bind-mounted.
+# Production overlay. Sources are baked into the images; nothing is bind-mounted.
+# JWT keys and posters live on named volumes so a rebuild does not wipe them.
 # The images are tagged `:prod` so they never overwrite the development ones.
 #
 #   docker compose -f compose.yaml -f compose.prod.yaml up -d --build
@@ -21,10 +22,12 @@ services:
       APP_SECRET: ${APP_SECRET:?set APP_SECRET to a unique value}
       JWT_PASSPHRASE: ${JWT_PASSPHRASE:?set JWT_PASSPHRASE to a unique value}
       DATABASE_URL: mysql://${DB_USER:-mairie}:${DB_PASSWORD:?set DB_PASSWORD to a unique value}@db:3306/${DB_NAME:-mairie_valentine}?serverVersion=8.4.0&charset=utf8mb4
-    # The warmed cache ships with the image, only the JWT keypair has to survive
-    # a restart — regenerating it would invalidate every issued token.
+    # The warmed cache ships with the image. The JWT keypair has to survive a
+    # restart — regenerating it would invalidate every issued token — and so do
+    # the posters PHP writes under public/uploads.
     volumes: !override
       - api_jwt:/var/www/html/config/jwt
+      - api_uploads:/var/www/html/public/uploads
 
   nginx:
     image: mairie-valentine/nginx:prod
@@ -33,9 +36,11 @@ services:
       dockerfile: docker/nginx/Dockerfile
       additional_contexts:
         # Serve the public/ directory built into the API image, so the bundle
-        # assets are present even on a fresh clone.
+        # assets are present even on a fresh clone. Posters are not part of
+        # that copy: the volume below is the same directory PHP writes to.
         api: service:api
-    volumes: !reset []
+    volumes: !override
+      - api_uploads:/var/www/html/public/uploads:ro
 
   web:
     image: mairie-valentine/web:prod
@@ -49,3 +54,4 @@ services:
 
 volumes:
   api_jwt:
+  api_uploads:

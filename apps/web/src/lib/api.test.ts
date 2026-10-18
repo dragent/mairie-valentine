@@ -9,7 +9,7 @@ afterEach(() => {
 });
 
 describe("apiFetch", () => {
-  it("sends the bearer token and reads a successful JSON body", async () => {
+  it("sends the session cookie and does not put a token in a header", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -22,7 +22,8 @@ describe("apiFetch", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/me$/),
       expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: "Bearer jwt" }),
+        credentials: "include",
+        headers: expect.not.objectContaining({ Authorization: expect.any(String) }),
       }),
     );
   });

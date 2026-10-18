@@ -7,7 +7,18 @@ case "$1" in
 	*) exec "$@" ;;
 esac
 
-mkdir -p var/cache var/log config/jwt
+mkdir -p var/cache var/log config/jwt public/uploads/events public/uploads/decrees
+
+# A fresh named volume is root-owned. PHP-FPM writes posters as www-data, and
+# nginx (a different user, often a different container) must still be able to
+# read them. Bind mounts used in dev, Windows in particular, may reject chown.
+if ! chown www-data:www-data public/uploads public/uploads/events public/uploads/decrees 2>/dev/null \
+	|| ! chmod 0755 public/uploads public/uploads/events public/uploads/decrees 2>/dev/null; then
+	if [ "$APP_ENV" = 'prod' ]; then
+		echo '[entrypoint] Could not prepare public/uploads for www-data.' >&2
+		exit 1
+	fi
+fi
 
 # Production refuses the compose placeholders. The real values come from the server environment.
 if [ "$APP_ENV" = 'prod' ]; then
@@ -73,5 +84,9 @@ fi
 # php-fpm needs to write the cache and the uploaded files as www-data.
 setfacl -R -m u:www-data:rwX -m u:"$(id -u -n)":rwX var config/jwt 2>/dev/null || true
 setfacl -dR -m u:www-data:rwX -m u:"$(id -u -n)":rwX var config/jwt 2>/dev/null || true
+
+# Posters are served by nginx as a different user. 0022 keeps new files
+# world-readable (0644) and new directories traversable (0755).
+umask 0022
 
 exec "$@"
