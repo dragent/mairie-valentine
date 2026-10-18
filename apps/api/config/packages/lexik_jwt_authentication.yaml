@@ -3,6 +3,22 @@ lexik_jwt_authentication:
     public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
     pass_phrase: '%env(JWT_PASSPHRASE)%'
     token_ttl: '%env(int:JWT_TOKEN_TTL)%'
+    # A token without exp would stay valid forever. RS256 rejects HMAC/"none" confusion.
+    allow_no_expiration: false
+    encoder:
+        signature_algorithm: RS256
+    # The token is only accepted from the Authorization header, never from a
+    # query string that would land in access logs.
+    token_extractors:
+        authorization_header:
+            enabled: true
+            prefix: Bearer
+            name: Authorization
+        cookie:
+            enabled: false
+        query_parameter:
+            enabled: false
     # Users are identified by their immutable Discord snowflake, not their
-    # username, which they can change at any time.
+    # username, which they can change at any time. Roles are not read from the
+    # token: the account is reloaded from the database.
     user_id_claim: discordId

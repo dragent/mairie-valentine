@@ -12,6 +12,7 @@ framework:
     # stateless and authenticated with a JWT.
     session:
         cookie_secure: auto
+        cookie_httponly: true
         cookie_samesite: lax
 
 when@test:

@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Security\Discord\DiscordApi;
 use App\Security\Discord\DiscordUserProvisioner;
+use App\Security\Discord\InvalidDiscordIdentity;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Client\OAuth2Client;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -72,7 +73,11 @@ final class DiscordAuthController extends AbstractController
             }
         }
 
-        $user = $this->provisioner->provision($owner);
+        try {
+            $user = $this->provisioner->provision($owner);
+        } catch (InvalidDiscordIdentity) {
+            return $this->backToFrontend(['error' => 'invalid_discord_account']);
+        }
 
         return $this->backToFrontend(['token' => $this->jwtManager->create($user)]);
     }

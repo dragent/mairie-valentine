@@ -32,7 +32,7 @@ final readonly class DiscordUserProvisioner
 
     public function provision(DiscordResourceOwner $owner): User
     {
-        $discordId = (string) $owner->getId();
+        $discordId = DiscordIdentity::snowflake((string) $owner->getId());
         $profile = $owner->toArray();
 
         $user = $this->users->findOneByDiscordId($discordId)
