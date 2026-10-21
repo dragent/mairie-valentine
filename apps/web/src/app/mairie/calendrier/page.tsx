@@ -13,6 +13,7 @@ import { calendarSheet } from "@/lib/calendar-sheet";
 import { buildMonth, countByKind, filterByKind, townLayoutYear, townToday, type CalendarEntry } from "@/lib/calendar";
 import { daySheet } from "@/lib/day-sheet";
 import { knownLocations } from "@/lib/known-locations";
+import { scheduleConflicts } from "@/lib/schedule-conflicts";
 import { describe, useResource } from "@/lib/use-resource";
 
 const WEEKDAYS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
@@ -61,6 +62,7 @@ export default function CalendarPage() {
   );
   const cells = filterByKind(month, shown);
   const counts = countByKind(month);
+  const conflicts = scheduleConflicts(meetings.items ?? [], events.items ?? []);
   const sheetLines = daySheet(meetings.items ?? [], events.items ?? []);
   const sheetDate = today.toLocaleDateString("fr-FR", {
     weekday: "long",
@@ -138,6 +140,13 @@ export default function CalendarPage() {
 
             <div className="mt-6 space-y-6">
               <ErrorBanner message={message} />
+              {conflicts.length > 0 && (
+                <ul className="space-y-2 rounded-md border border-line px-4 py-3 text-sm">
+                  {conflicts.map((conflict) => (
+                    <li key={conflict.id}>{conflict.message}</li>
+                  ))}
+                </ul>
+              )}
 
               {pending ? (
                 <LoadingSeal />

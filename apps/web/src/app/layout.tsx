@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Libre_Bodoni, Rye } from "next/font/google";
+import { headers } from "next/headers";
 
 import { AuthGate } from "@/components/auth-gate";
 import { SiteFooter } from "@/components/site-footer";
@@ -40,7 +41,12 @@ export const metadata: Metadata = {
     "Services administratifs de la ville de Valentine : registre des citoyens, documents officiels et arrêtés municipaux.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Dynamic rendering lets Next stamp the per-request CSP nonce on its scripts.
+  // The nonce stays off <html>: browsers hide that attribute after parsing,
+  // and hydration then reports a mismatch.
+  await headers();
+
   return (
     <html
       lang="fr"

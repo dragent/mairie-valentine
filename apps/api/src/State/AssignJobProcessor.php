@@ -82,6 +82,10 @@ final readonly class AssignJobProcessor implements ProcessorInterface
             return;
         }
 
+        if (!$this->security->isGranted(User::ROLE_ELU)) {
+            throw new AccessDeniedHttpException('Seul un élu peut modifier une fonction.');
+        }
+
         $current = $target->getJob();
         $recruiting = Job::SECRETAIRE === $job && (null === $current || Job::SECRETAIRE === $current);
         $dismissing = null === $job && Job::SECRETAIRE === $current;

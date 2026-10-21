@@ -7,120 +7,83 @@ import {
   useEffect,
   useMemo,
   useState,
-  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
-import { ApiError, fetchCurrentUser, type CurrentUser } from "@/lib/api";
-
-const TOKEN_STORAGE_KEY = "mairie-valentine.token";
-
-/**
- * localStorage is an external store: going through useSyncExternalStore keeps
- * React in sync with it (including across tabs) without the hydration mismatch
- * that reading it during render would cause.
- */
-const listeners = new Set<() => void>();
-
-function subscribeToToken(onStoreChange: () => void): () => void {
-  listeners.add(onStoreChange);
-  window.addEventListener("storage", onStoreChange);
-
-  return () => {
-    listeners.delete(onStoreChange);
-    window.removeEventListener("storage", onStoreChange);
-  };
-}
-
-function readToken(): string | null {
-  return window.localStorage.getItem(TOKEN_STORAGE_KEY);
-}
-
-function writeToken(token: string | null): void {
-  if (token === null) {
-    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-  } else {
-    window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
-  }
-
-  // The `storage` event is not fired in the tab that wrote the value.
-  for (const listener of listeners) {
-    listener();
-  }
-}
+import { ApiError, endSession, fetchCurrentUser, type CurrentUser } from "@/lib/api";
 
 type AuthState = {
   user: CurrentUser | null;
+  /** Present once the cookie session has been confirmed. It is not a JWT. */
   token: string | null;
   isLoading: boolean;
-  signIn: (token: string) => void;
+  signIn: () => void;
   signOut: () => void;
   reload: () => Promise<void>;
   hasRole: (role: string) => boolean;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
+const SESSION = "session";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const token = useSyncExternalStore(subscribeToToken, readToken, () => null);
-  const [profile, setProfile] = useState<{ token: string; user: CurrentUser | null } | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
-    if (token === null) {
-      return;
-    }
-
     let cancelled = false;
 
-    fetchCurrentUser(token)
-      .then((user) => {
+    fetchCurrentUser()
+      .then((next) => {
         if (!cancelled) {
-          setProfile({ token, user });
+          setUser(next);
         }
       })
       .catch((error: unknown) => {
-        // An expired or revoked token is worthless, drop it.
-        if (error instanceof ApiError && error.status === 401) {
-          writeToken(null);
-          return;
+        if (!cancelled && (error instanceof ApiError || error instanceof Error)) {
+          setUser(null);
         }
-
+      })
+      .finally(() => {
         if (!cancelled) {
-          setProfile({ token, user: null });
+          setIsLoading(false);
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [revision]);
 
-  const signIn = useCallback((newToken: string) => writeToken(newToken), []);
-  const signOut = useCallback(() => writeToken(null), []);
+  const signIn = useCallback(() => {
+    setRevision((current) => current + 1);
+  }, []);
+
+  const signOut = useCallback(() => {
+    void endSession()
+      .catch(() => undefined)
+      .finally(() => setUser(null));
+  }, []);
+
   const reload = useCallback(() => {
-    if (token === null) {
-      return Promise.resolve();
-    }
-
-    return fetchCurrentUser(token).then((nextUser) => {
-      setProfile({ token, user: nextUser });
+    return fetchCurrentUser().then((next) => {
+      setUser(next);
     });
-  }, [token]);
+  }, []);
 
-  const value = useMemo<AuthState>(() => {
-    const isResolved = profile?.token === token;
-    const user = isResolved ? profile.user : null;
-
-    return {
+  const value = useMemo<AuthState>(
+    () => ({
       user,
-      token,
-      isLoading: token !== null && !isResolved,
+      token: user === null ? null : SESSION,
+      isLoading,
       signIn,
       signOut,
       reload,
       hasRole: (role) => user?.roles.includes(role) ?? false,
-    };
-  }, [profile, token, signIn, signOut, reload]);
+    }),
+    [user, isLoading, signIn, signOut, reload],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

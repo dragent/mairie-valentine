@@ -84,5 +84,6 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-pr
 COPY apps/api/ ./
 RUN composer dump-autoload --classmap-authoritative --no-dev \
     && composer run-script --no-dev post-install-cmd \
-    && mkdir -p var/cache var/log config/jwt \
-    && chown -R www-data:www-data var config/jwt
+    && mkdir -p var/cache var/log config/jwt public/uploads/events public/uploads/decrees \
+    && chown -R www-data:www-data var config/jwt public/uploads \
+    && chmod -R u+rwX,go+rX public/uploads

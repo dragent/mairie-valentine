@@ -89,6 +89,71 @@ final class DiscordUserProvisionerTest extends TestCase
         self::assertSame('William Harrington', $user->getDisplayName());
     }
 
+    public function testAFailedSyncWithdrawsPrivilegesUntilDiscordAnswersAgain(): void
+    {
+        $existing = new User('42', 'dragent0');
+        $existing->setDisplayName('William Harrington');
+        $existing->setJob(Job::MAIRE);
+        $existing->setRoles([User::ROLE_ADMIN]);
+
+        $users = $this->createMock(UserRepository::class);
+        $users->method('findOneByDiscordId')->willReturn($existing);
+
+        $down = $this->createMock(HttpClientInterface::class);
+        $down->method('request')->willThrowException(new TransportException('Discord is down'));
+
+        $user = $this->provisioner($down, $users, $this->createMock(EntityManagerInterface::class))->provision($this->owner());
+
+        self::assertSame('William Harrington', $user->getDisplayName());
+        self::assertSame(Job::MAIRE, $user->getJob());
+        self::assertNotContains(User::ROLE_MAIRE, $user->getRoles());
+        self::assertNotContains(User::ROLE_ELU, $user->getRoles());
+        self::assertContains(User::ROLE_ADMIN, $user->getRoles());
+        self::assertContains(User::ROLE_USER, $user->getRoles());
+
+        $up = $this->createMock(HttpClientInterface::class);
+        $up->method('request')->willReturn($this->discordResponse(200, [
+            'nick' => 'William Harrington',
+            'roles' => ['role-maire'],
+            'user' => [
+                'id' => '42',
+                'username' => 'dragent0',
+                'global_name' => 'Alexis',
+            ],
+        ]));
+
+        $restored = $this->provisioner($up, $users, $this->createMock(EntityManagerInterface::class))->provision($this->owner());
+
+        self::assertContains(User::ROLE_MAIRE, $restored->getRoles());
+        self::assertContains(User::ROLE_ADMIN, $restored->getRoles());
+        self::assertSame(Job::MAIRE, $restored->getJob());
+    }
+
+    public function testAnUnconfiguredGuildKeepsAHandManagedPosition(): void
+    {
+        $existing = new User('42', 'dragent0');
+        $existing->setJob(Job::MAIRE);
+
+        $users = $this->createMock(UserRepository::class);
+        $users->method('findOneByDiscordId')->willReturn($existing);
+
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects($this->never())->method('request');
+
+        $provisioner = new DiscordUserProvisioner(
+            users: $users,
+            entityManager: $this->createMock(EntityManagerInterface::class),
+            discordApi: new DiscordApi($client, ''),
+            roleMap: new JobRoleMap('', '', ''),
+            guildId: '',
+        );
+
+        $user = $provisioner->provision($this->owner());
+
+        self::assertSame(Job::MAIRE, $user->getJob());
+        self::assertContains(User::ROLE_MAIRE, $user->getRoles());
+    }
+
     private function owner(): DiscordResourceOwner
     {
         $owner = $this->createMock(DiscordResourceOwner::class);
