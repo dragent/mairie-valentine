@@ -32,9 +32,16 @@
 }
 
 body {
-  background-color: var(--background);
+  background-color: #090807;
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  background-image:
+    url("/paper-grain.svg"),
+    radial-gradient(ellipse 88% 80% at 50% 36%, #4a3c30 0%, #2a221b 40%, #120f0c 72%, #090807 100%);
+  background-repeat: repeat, no-repeat;
+  background-size: 360px 360px, 100% 100dvh;
+  background-position: center, center top;
+  background-blend-mode: normal, normal;
 }
 
 body::before,
@@ -70,10 +77,10 @@ body::before {
 body::after {
   z-index: 0;
   background: radial-gradient(
-    circle at center,
-    rgba(23, 19, 16, 0.62) 0%,
-    rgba(23, 19, 16, 0.34) 160px,
-    transparent 320px
+    ellipse at 50% 40%,
+    transparent 0%,
+    transparent 68%,
+    rgba(5, 4, 3, 0.4) 100%
   );
 }
 
@@ -106,7 +113,7 @@ dialog.calendar-sheet {
   margin: auto;
   padding: 0;
   border: none;
-  background: var(--surface);
+  background: #312920;
   color: var(--foreground);
 }
 
@@ -150,7 +157,10 @@ dialog.calendar-sheet::backdrop {
   border: 1px solid var(--gold-dark);
   outline: 1px solid color-mix(in srgb, var(--gold-dark) 80%, transparent);
   outline-offset: -4px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  background-color: #312920;
+  box-shadow:
+    0 28px 70px rgba(0, 0, 0, 0.55),
+    0 8px 22px rgba(0, 0, 0, 0.4);
 }
 
 .loading-book,
