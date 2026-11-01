@@ -7,12 +7,7 @@ import { fileURLToPath } from 'node:url';
  * A major upgrade is not applied here: each entry says why.
  * Any other high or critical advisory, including devDependencies, fails the run.
  */
-const waived = new Map([
-  [
-    'GHSA-vfj7-8cjw-p6xm',
-    'braces <=3.0.3 has no patched release (latest is still 3.0.3). It is only reached from eslint-config-next while linting globs. npm offers eslint-config-next 14 as the fix, which cannot lint Next.js 16.',
-  ],
-]);
+const waived = new Map();
 
 const blocking = new Set(['high', 'critical']);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -53,7 +48,12 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log('Dependency audit passed. Waived after analysis:', [...seen].join(', '));
+const waivedIds = [...seen];
+console.log(
+  waivedIds.length > 0
+    ? `Dependency audit passed. Waived after analysis: ${waivedIds.join(', ')}`
+    : 'Dependency audit passed.',
+);
 
 function explained(name, stack) {
   if (stack.has(name)) {
