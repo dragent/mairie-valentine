@@ -1,38 +1,56 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
 import { RequireRole } from "@/components/require-role";
-import { ErrorBanner, WorkspaceHeading } from "@/components/resource-table";
+import { ErrorBanner, Field, TextInput } from "@/components/resource-table";
 import { ROLE_ELU, ROLE_SECRETAIRE, appointments, decrees, municipalEvents, notes } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { SEARCH_KIND_LABELS, searchRegisters, type SearchHit } from "@/lib/register-search";
 import { useResource } from "@/lib/use-resource";
 
 export default function SearchPage() {
-  const { hasRole } = useAuth();
+  const { user, hasRole } = useAuth();
   const [query, setQuery] = useState("");
+  const signatory = user?.displayName ?? user?.username;
+  const signature = user?.jobLabel && signatory ? `${user.jobLabel} — ${signatory}` : signatory;
 
   return (
     <RequireRole role={ROLE_SECRETAIRE}>
-      <div className="space-y-8">
-        <WorkspaceHeading
-          title="Recherche"
-          lead="Un mot dans les notes, les événements, les rendez-vous, et les décrets pour les élus."
-        />
-
-        <label className="block max-w-md space-y-2 text-sm">
-          <span className="text-xs tracking-wide text-muted">Mot à chercher</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="w-full rounded-md border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
+      <section className="ledger-frame bg-surface px-8 py-8 sm:px-10">
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+          <Image
+            src="/sceau-mairie.png"
+            alt=""
+            width={112}
+            height={112}
+            className="size-28 shrink-0 object-contain"
           />
-        </label>
+          <div className="space-y-3 text-center sm:text-left">
+            <p className="text-xs tracking-[0.28em] text-gold-dark uppercase">Greffe municipal</p>
+            <h1 className="font-display text-4xl text-heading">Recherche</h1>
+            {signature && <p className="text-sm text-accent">{signature}</p>}
+          </div>
+        </div>
 
-        {hasRole(ROLE_ELU) ? <ElectedHits query={query} /> : <StaffHits query={query} />}
-      </div>
+        <p className="mt-8 max-w-2xl text-center leading-relaxed sm:text-left">
+          Un mot dans les notes, les événements, les rendez-vous, et les décrets pour les élus.
+        </p>
+
+        <Ornament />
+
+        <div className="space-y-8">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Mot à chercher" wide>
+              <TextInput value={query} onChange={(event) => setQuery(event.target.value)} />
+            </Field>
+          </div>
+
+          {hasRole(ROLE_ELU) ? <ElectedHits query={query} /> : <StaffHits query={query} />}
+        </div>
+      </section>
     </RequireRole>
   );
 }
@@ -119,6 +137,16 @@ function HitList({
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function Ornament() {
+  return (
+    <div className="my-8 flex items-center gap-4" aria-hidden="true">
+      <span className="h-px flex-1 bg-gold-dark/70" />
+      <span className="size-1.5 rotate-45 bg-gold-dark" />
+      <span className="h-px flex-1 bg-gold-dark/70" />
     </div>
   );
 }

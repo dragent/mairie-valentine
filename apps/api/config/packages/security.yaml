@@ -31,7 +31,7 @@ security:
         - { path: ^/api/public, roles: PUBLIC_ACCESS }
         # A citizen holds ROLE_USER only. These rules run before the generic
         # /api rule, so a forged request cannot reach a decree or a promotion.
-        - { path: ^/api/(users|promotions|decrees|guild-members), roles: ROLE_ELU }
+        - { path: ^/api/(users|promotions|decrees|guild-members|identity_cards), roles: ROLE_ELU }
         - { path: ^/api/(notes|appointments|municipal_events), roles: ROLE_SECRETAIRE }
         - { path: ^/api, roles: ROLE_USER }
 

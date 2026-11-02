@@ -284,6 +284,18 @@ export function uploadDecreePoster(token: string, id: number, file: File): Promi
 export const notes = resource<Note, NoteInput>("/api/notes");
 export const decrees = resource<Decree, DecreeInput>("/api/decrees");
 
+/** An anonymous issuance. The holder is never stored. */
+export type IdentityCard = Authored & {
+  id: number;
+};
+
+export const identityCards = resource<IdentityCard, Record<string, never>>("/api/identity_cards");
+
+/** Wipes the tally after a mayors' meeting. Mayor and deputy mayor only. */
+export function closeIdentityCardRegister(token: string): Promise<void> {
+  return apiFetch<void>("/api/identity_cards/close", { token, method: "POST" });
+}
+
 export type StaffMember = {
   id: number;
   discordId: string;
