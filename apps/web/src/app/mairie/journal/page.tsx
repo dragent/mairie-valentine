@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { RequireRole } from "@/components/require-role";
-import { ErrorBanner, WorkspaceHeading } from "@/components/resource-table";
+import { ErrorBanner } from "@/components/resource-table";
 import {
   ROLE_ELU,
   ROLE_SECRETAIRE,
@@ -19,17 +20,38 @@ import { JOURNAL_KIND_LABELS, greffeJournal } from "@/lib/greffe-journal";
 import { useResource } from "@/lib/use-resource";
 
 export default function JournalPage() {
-  const { hasRole } = useAuth();
+  const { user, hasRole } = useAuth();
+  const signatory = user?.displayName ?? user?.username;
+  const signature = user?.jobLabel && signatory ? `${user.jobLabel} — ${signatory}` : signatory;
 
   return (
     <RequireRole role={ROLE_SECRETAIRE}>
-      <div className="space-y-8">
-        <WorkspaceHeading
-          title="Journal"
-          lead="Dernière touche sur chaque note, événement et rendez-vous. Les décrets apparaissent pour les élus."
-        />
-        {hasRole(ROLE_ELU) ? <JournalWithDecrees /> : <JournalList decrees={[]} />}
-      </div>
+      <section className="ledger-frame bg-surface px-8 py-8 sm:px-10">
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+          <Image
+            src="/sceau-mairie.png"
+            alt=""
+            width={112}
+            height={112}
+            className="size-28 shrink-0 object-contain"
+          />
+          <div className="space-y-3 text-center sm:text-left">
+            <p className="text-xs tracking-[0.28em] text-gold-dark uppercase">Greffe municipal</p>
+            <h1 className="font-display text-4xl text-heading">Journal</h1>
+            {signature && <p className="text-sm text-accent">{signature}</p>}
+          </div>
+        </div>
+
+        <p className="mt-8 max-w-2xl text-center leading-relaxed sm:text-left">
+          Dernière touche sur chaque note, événement et rendez-vous. Les décrets apparaissent pour les élus.
+        </p>
+
+        <Ornament />
+
+        <div className="space-y-8">
+          {hasRole(ROLE_ELU) ? <JournalWithDecrees /> : <JournalList decrees={[]} />}
+        </div>
+      </section>
     </RequireRole>
   );
 }
@@ -85,6 +107,16 @@ function JournalList({
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function Ornament() {
+  return (
+    <div className="my-8 flex items-center gap-4" aria-hidden="true">
+      <span className="h-px flex-1 bg-gold-dark/70" />
+      <span className="size-1.5 rotate-45 bg-gold-dark" />
+      <span className="h-px flex-1 bg-gold-dark/70" />
     </div>
   );
 }
