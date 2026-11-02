@@ -14,9 +14,11 @@ use App\Controller\PublicBoardController;
 use App\Dto\JobAssignment;
 use App\Entity\Appointment;
 use App\Entity\Decree;
+use App\Entity\IdentityCard;
 use App\Entity\MunicipalEvent;
 use App\Entity\Note;
 use App\Entity\User;
+use App\State\CloseIdentityCardRegisterProcessor;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\HttpOperation;
 use PHPUnit\Framework\TestCase;
@@ -44,7 +46,7 @@ final class AccessPolicyTest extends TestCase
             '^/api/(docs|contexts|\.well-known)' => 'PUBLIC_ACCESS',
             '^/api$' => 'PUBLIC_ACCESS',
             '^/api/public' => 'PUBLIC_ACCESS',
-            '^/api/(users|promotions|decrees|guild-members)' => 'ROLE_ELU',
+            '^/api/(users|promotions|decrees|guild-members|identity_cards)' => 'ROLE_ELU',
             '^/api/(notes|appointments|municipal_events)' => 'ROLE_SECRETAIRE',
             '^/api' => 'ROLE_USER',
         ], $rules);
@@ -64,9 +66,25 @@ final class AccessPolicyTest extends TestCase
     public function testResourcesCannotBeWrittenByACitizen(): void
     {
         self::assertSame("is_granted('ROLE_ELU')", $this->resourceSecurity(Decree::class));
+        self::assertSame("is_granted('ROLE_ELU')", $this->resourceSecurity(IdentityCard::class));
         self::assertSame("is_granted('ROLE_SECRETAIRE')", $this->resourceSecurity(Note::class));
         self::assertSame("is_granted('ROLE_SECRETAIRE')", $this->resourceSecurity(Appointment::class));
         self::assertSame("is_granted('ROLE_SECRETAIRE')", $this->resourceSecurity(MunicipalEvent::class));
+
+        $closed = false;
+        foreach ($this->operations(IdentityCard::class) as $operation) {
+            self::assertNotSame('DELETE', strtoupper((string) $operation->getMethod()));
+
+            if ('/identity_cards/close' === $operation->getUriTemplate()) {
+                $closed = true;
+                self::assertSame('POST', strtoupper((string) $operation->getMethod()));
+                self::assertSame(CloseIdentityCardRegisterProcessor::class, $operation->getProcessor());
+                self::assertFalse($operation->getInput());
+                self::assertFalse($operation->getOutput());
+                self::assertSame(204, $operation->getStatus());
+            }
+        }
+        self::assertTrue($closed, 'The mayors meeting must be able to close the identity-card register.');
 
         foreach ($this->operations(User::class) as $operation) {
             self::assertSame("is_granted('ROLE_ELU')", $operation->getSecurity());
