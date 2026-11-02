@@ -49,6 +49,8 @@ final class HttpAuthorizationTest extends KernelTestCase
         self::assertSame(200, $this->httpStatus('GET', '/health'));
         self::assertSame(200, $this->httpStatus('GET', '/api/public/board'));
         self::assertSame(401, $this->httpStatus('GET', '/api/notes'));
+        self::assertSame(401, $this->httpStatus('GET', '/api/identity_cards'));
+        self::assertSame(401, $this->httpStatus('POST', '/api/identity_cards/close'));
         self::assertSame(401, $this->httpStatus('GET', '/api/me'));
     }
 
@@ -60,6 +62,9 @@ final class HttpAuthorizationTest extends KernelTestCase
         self::assertSame(403, $this->httpStatus('GET', '/api/notes', $token));
         self::assertSame(403, $this->httpStatus('POST', '/api/notes', $token, $this->noteBody()));
         self::assertSame(403, $this->httpStatus('GET', '/api/decrees', $token));
+        self::assertSame(403, $this->httpStatus('GET', '/api/identity_cards', $token));
+        self::assertSame(403, $this->httpStatus('POST', '/api/identity_cards', $token, '{}'));
+        self::assertSame(403, $this->httpStatus('POST', '/api/identity_cards/close', $token));
         self::assertSame(403, $this->httpStatus('GET', '/api/users', $token));
         self::assertSame(403, $this->httpStatus('POST', '/api/promotions', $token, $this->promotion('201', 'secretaire')));
         self::assertSame(403, $this->httpStatus('POST', '/api/decrees/1/poster', $token));
@@ -73,6 +78,9 @@ final class HttpAuthorizationTest extends KernelTestCase
         self::assertSame(200, $this->httpStatus('GET', '/api/notes', $token));
         self::assertSame(201, $this->httpStatus('POST', '/api/notes', $token, $this->noteBody()));
         self::assertSame(403, $this->httpStatus('GET', '/api/decrees', $token));
+        self::assertSame(403, $this->httpStatus('GET', '/api/identity_cards', $token));
+        self::assertSame(403, $this->httpStatus('POST', '/api/identity_cards', $token, '{}'));
+        self::assertSame(403, $this->httpStatus('POST', '/api/identity_cards/close', $token));
         self::assertSame(403, $this->httpStatus('GET', '/api/users', $token));
         self::assertSame(403, $this->httpStatus('POST', '/api/promotions', $token, $this->promotion('201', 'secretaire')));
         self::assertSame(403, $this->httpStatus('POST', '/api/decrees/1/poster', $token));
@@ -84,6 +92,9 @@ final class HttpAuthorizationTest extends KernelTestCase
         $token = self::$tokens['deputy'];
 
         self::assertSame(200, $this->httpStatus('GET', '/api/decrees', $token));
+        self::assertSame(200, $this->httpStatus('GET', '/api/identity_cards', $token));
+        self::assertSame(201, $this->httpStatus('POST', '/api/identity_cards', $token, '{}'));
+        self::assertSame(204, $this->httpStatus('POST', '/api/identity_cards/close', $token));
         self::assertSame(200, $this->httpStatus('GET', '/api/notes', $token));
         self::assertSame(200, $this->httpStatus('GET', '/api/users', $token));
         self::assertSame(200, $this->httpStatus('POST', '/api/promotions', $token, $this->promotion('201', 'secretaire')));
@@ -99,6 +110,8 @@ final class HttpAuthorizationTest extends KernelTestCase
         self::assertSame(403, $this->httpStatus('POST', '/api/promotions', $token, $this->promotion('103', 'adjoint')));
         self::assertSame(200, $this->httpStatus('POST', '/api/promotions', $token, $this->promotion('202', 'adjoint')));
         self::assertSame(200, $this->httpStatus('GET', '/api/decrees', $token));
+        self::assertSame(201, $this->httpStatus('POST', '/api/identity_cards', $token, '{}'));
+        self::assertSame(204, $this->httpStatus('POST', '/api/identity_cards/close', $token));
     }
 
     public function testAnAdministratorInheritsTheMayorsPowers(): void

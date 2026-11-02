@@ -10,13 +10,19 @@ import { useAuth } from "@/lib/auth-context";
 import { showsPublicBoard } from "@/lib/public-routes";
 
 /** Staff links, each limited to the given role. */
-const NAV_LINKS = [{ href: "/personnel", label: "Personnel", role: ROLE_ELU }];
+const NAV_LINKS = [
+  { href: "/personnel", label: "Personnel", role: ROLE_ELU },
+  { href: "/mairie/cartes-identite", label: "Cartes d'identité", role: ROLE_ELU },
+];
 
 const MAIRIE_LINKS = [
   { href: "/mairie/calendrier", label: "Calendrier", role: ROLE_SECRETAIRE },
   { href: "/mairie/decrets", label: "Décrets", role: ROLE_ELU },
   { href: "/mairie/evenements", label: "Événements", role: ROLE_SECRETAIRE },
   { href: "/mairie/rendez-vous", label: "Rendez-vous", role: ROLE_SECRETAIRE },
+];
+
+const GREFFE_LINKS = [
   { href: "/mairie/citoyens", label: "Citoyens", role: ROLE_SECRETAIRE },
   { href: "/mairie/journal", label: "Journal", role: ROLE_SECRETAIRE },
   { href: "/mairie/recherche", label: "Recherche", role: ROLE_SECRETAIRE },
@@ -27,6 +33,7 @@ export function SiteHeader() {
   const pathname = usePathname();
   const links = NAV_LINKS.filter((link) => hasRole(link.role));
   const mairieLinks = MAIRIE_LINKS.filter((link) => hasRole(link.role));
+  const greffeLinks = GREFFE_LINKS.filter((link) => hasRole(link.role));
 
   return (
     <header className="border-b border-line bg-surface print:hidden">
@@ -51,7 +58,8 @@ export function SiteHeader() {
             </Link>
           ))}
 
-          {mairieLinks.length > 0 && <MairieMenu links={mairieLinks} />}
+          {mairieLinks.length > 0 && <NavMenu label="Mairie" links={mairieLinks} />}
+          {greffeLinks.length > 0 && <NavMenu label="Greffe" links={greffeLinks} />}
 
           {isLoading ? (
             <span className="text-muted">…</span>
@@ -85,7 +93,7 @@ export function SiteHeader() {
   );
 }
 
-function MairieMenu({ links }: { links: { href: string; label: string }[] }) {
+function NavMenu({ label, links }: { label: string; links: { href: string; label: string }[] }) {
   const pathname = usePathname();
   const [openPath, setOpenPath] = useState<string | null>(null);
   const open = openPath === pathname;
@@ -128,7 +136,7 @@ function MairieMenu({ links }: { links: { href: string; label: string }[] }) {
         onClick={() => setOpenPath(open ? null : pathname)}
         className={`flex items-center gap-1 hover:text-foreground ${open ? "text-foreground" : "text-muted"}`}
       >
-        Mairie
+        {label}
         <Chevron open={open} />
       </button>
 
