@@ -53,7 +53,7 @@ body::after {
 }
 
 body::before {
-  z-index: 0;
+  z-index: 1;
   inset: auto;
   top: 50%;
   left: 50%;
@@ -64,7 +64,7 @@ body::before {
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  filter: sepia(0.85) saturate(0.35) contrast(1.08) brightness(0.32);
+  filter: sepia(0.85) saturate(0.35) contrast(1.08) brightness(0.46);
 }
 
 @media (min-width: 768px) {
@@ -76,12 +76,14 @@ body::before {
 
 body::after {
   z-index: 0;
-  background: radial-gradient(
-    ellipse at 50% 40%,
-    transparent 0%,
-    transparent 68%,
-    rgba(5, 4, 3, 0.4) 100%
-  );
+  background:
+    radial-gradient(
+      ellipse at 50% 40%,
+      transparent 0%,
+      transparent 68%,
+      rgba(5, 4, 3, 0.4) 100%
+    ),
+    rgba(36, 22, 14, 0.3);
 }
 
 main :is(h1, h2, h3, p, li, dt, dd) {
@@ -97,7 +99,7 @@ main .bg-surface :is(h1, h2, h3, p, li, dt, dd) {
 
 body > * {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 body > header {
